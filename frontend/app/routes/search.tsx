@@ -1,7 +1,7 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
 import { Nav } from "../nav/nav"
-import { Footer } from "../footer/footer"
+import Articles from "../articles/articles";
  
 export function meta({}: Route.MetaArgs) {
   return [
@@ -14,8 +14,7 @@ export default function Search() {
   return (
     <>
       <Nav />
-      <Welcome />
-      <Footer />
+      <Articles />
     </>
   );
 }

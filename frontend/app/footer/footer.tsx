@@ -1,4 +1,4 @@
-
+// Footer with contact email link.
 export function Footer() {
     return (
       <div className="bg-gray-900 shadow-lg max-w-7xl mx-auto px-4 flex flex-col items-center h-16">
@@ -7,4 +7,3 @@ export function Footer() {
       </div>
     );
   }
-  

@@ -1,4 +1,4 @@
-
+// Navigation bar with two links.
 export function Nav() {
     return (
       <nav className="bg-white shadow-lg">
