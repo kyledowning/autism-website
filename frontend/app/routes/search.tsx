@@ -5,12 +5,12 @@ import { Footer } from "../footer/footer"
  
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Home" },
-    { name: "Autism database tool", content: "" },
+    { title: "Search" },
+    { name: "Search database", content: "" },
   ];
 }
 
-export default function Home() {
+export default function Search() {
   return (
     <>
       <Nav />
