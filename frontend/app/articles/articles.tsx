@@ -21,19 +21,19 @@ export default function Articles() {
     // Render JSON response as a table.
     return (
         <div className='min-h-screen'>
-`        <div className='flex justify-center p-10'>
-          <table>
-            <tr className='bg-gray-800'>
+          <div className='flex justify-center p-10'>
+            <table className="">
+              <tr className='bg-gray-800'>
                 <th className='border border-gray-300 p-4 py-5'>ID</th>
                 <th className='border border-gray-300 p-4 py-5'>Title</th>
                 <th className='border border-gray-300 p-4 py-5'>Description</th>
-            </tr>
-            {data.map(entry => (
-              <tr>
-                <td className='border border-gray-300 p-4 py-3'>{entry.id}</td>
-                <td className='border border-gray-300 p-4 py-3'>{entry.title}</td>
-                <td className='border border-gray-300 p-4 py-3'>{entry.description}</td>
-              </tr>))}
+              </tr>
+              {data.map(entry => (
+                <tr className="hover:bg-red-500 transition duration-250 ease-in-out">
+                  <td className='border border-gray-300 p-4 py-3'>{entry.id}</td>
+                  <td className='border border-gray-300 p-4 py-3'>{entry.title}</td>
+                  <td className='border border-gray-300 p-4 py-3'>{entry.description}</td>
+                </tr>))}
             </table>
           </div>
         </div>
