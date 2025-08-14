@@ -1,41 +1,314 @@
 import React, { useState, useEffect } from 'react';
+import { Footer } from '../footer/footer'
+import { ArticleBox } from '~/articleBox/articleBox';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+
+function YearChart({ filters }) {
+  const [chartData, setChartData] = useState([]);
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const queryParams = new URLSearchParams({
+          q: filters.search || '',
+          age: filters.selectedAge || '',
+          language: filters.selectedLanguage || '',
+          participantnumber: filters.selectedParticipantNumber || '',
+          targetuser: filters.selectedTargetUser || '',
+          technology: filters.selectedTechnology || '',
+          gender: filters.selectedGender || '',
+          challenge: filters.selectedChallenge || ''
+        });
+        const response = await fetch(`http://127.0.0.1:5055/api/visualizations?${queryParams}`);
+        const data = await response.json();
+        if (data.success) {
+          setChartData(data.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch chart data:', error);
+        setChartData([]);
+      }
+    };
+    fetchChartData();
+  }, [filters]);
+  return (
+    <div>
+      <div className="p-4">
+        <h2 className="text-lg font-semibold text-gray-800">Publications by year</h2>
+      </div>
+      <div className="p-4">
+        <div className="bg-gray-50 p-4 m-2 rounded-lg">
+          <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="year" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="count" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Articles() {
 
-    // Fetch JSON from server.
-    const [data, setData] = useState(null);
-    useEffect(() => {
-        fetch('http://127.0.0.1:5055/api/data').then(response => response.json()).then(
-            response => {
-                console.log(response.data);
-                setData(response.data);
-            }
-        ).catch(error => {
-            console.log("API request failed.", error);
-        });
-    }, []);
-    if (!data) {
-        return <h1>No entry</h1>
-    }
+  const [inputValue, setInputValue] = useState('');
+  const [length, setLength] = useState(0);
+  const [data, setData] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-    // Render JSON response as a table.
-    return (
-        <div className='min-h-screen'>
-          <div className='flex justify-center p-10'>
-            <table className="">
-              <tr className='bg-gray-800'>
-                <th className='border border-gray-300 p-4 py-5'>ID</th>
-                <th className='border border-gray-300 p-4 py-5'>Title</th>
-                <th className='border border-gray-300 p-4 py-5'>Description</th>
-              </tr>
-              {data.map(entry => (
-                <tr className="hover:bg-red-500 transition duration-250 ease-in-out">
-                  <td className='border border-gray-300 p-4 py-3'>{entry.id}</td>
-                  <td className='border border-gray-300 p-4 py-3'>{entry.title}</td>
-                  <td className='border border-gray-300 p-4 py-3'>{entry.description}</td>
-                </tr>))}
-            </table>
+  const [visibleCount, setVisibleCount] = useState(10);
+  const ITEMS_PER_LOAD = 10;
+
+  const [search, setSearch] = useState('');
+  const [selectedAge, setSelectedAge] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [selectedParticipantNumber, setSelectedParticipantNumber] = useState('');
+  const [selectedTargetUser, setSelectedTargetUser] = useState('');
+  const [selectedTechnology, setSelectedTechnology] = useState('');
+  const [selectedGender, setSelectedGender] = useState('');
+  const [selectedChallenge, setSelectedChallenge] = useState('');
+
+  const handleSearch = () => {
+    setSearch(inputValue);
+    setVisibleCount(10);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const loadMore = () => {
+    setVisibleCount(prev => prev + ITEMS_PER_LOAD);
+  };
+
+  const resetFilters = () => {
+    setSelectedAge('');
+    setSelectedLanguage('');
+    setSelectedParticipantNumber('');
+    setSelectedTargetUser('');
+    setSelectedTechnology('');
+    setSelectedGender('');
+    setSelectedChallenge('');
+    setInputValue('');
+    setSearch('');
+    setVisibleCount(10);
+  };
+
+  // API Request. Dependencies on filter and search state.
+  useEffect(() => {
+    if (search || selectedAge || selectedLanguage || selectedParticipantNumber || selectedTargetUser || selectedTechnology || selectedGender || selectedChallenge) {
+      setLoading(true);
+      setVisibleCount(10); // Reset visible count when filters change
+      fetch(`http://127.0.0.1:5055/api/data?` +
+      `q=${encodeURIComponent(search)}&` +
+      `age=${encodeURIComponent(selectedAge)}&` +
+      `language=${encodeURIComponent(selectedLanguage)}&` +
+      `participantnumber=${encodeURIComponent(selectedParticipantNumber)}&` +
+      `targetuser=${encodeURIComponent(selectedTargetUser)}&` +
+      `technology=${encodeURIComponent(selectedTechnology)}&` +
+      `gender=${encodeURIComponent(selectedGender)}&` +
+      `challenge=${encodeURIComponent(selectedChallenge)}`)
+        .then(response => response.json())
+        .then(response => {
+          setData(response.data);
+          setLength(response.count);
+          setLoading(false);
+        })
+        .catch(error => {
+          setLoading(false);
+          console.log("API request failed.", error);
+        });
+    } else if (!search) {
+      setLoading(true);
+      setVisibleCount(10); // Reset visible count when filters change
+      fetch(`http://127.0.0.1:5055/api/data`)
+        .then(response => response.json())
+        .then(response => {
+          setData(response.data);
+          setLength(response.count);
+          setLoading(false);
+        })
+        .catch(error => {
+          setLoading(false);
+          console.log("API request failed.", error);
+        });
+    }
+  }, [search, selectedAge, selectedLanguage, selectedParticipantNumber, selectedTargetUser, selectedTechnology, selectedGender, selectedChallenge]);
+
+  // Prepare filter object for visualization component
+  const currentFilters = {
+    search,
+    selectedAge,
+    selectedLanguage,
+    selectedParticipantNumber,
+    selectedTargetUser,
+    selectedTechnology,
+    selectedGender,
+    selectedChallenge
+  };
+
+  return (
+    <div>
+    <div className='min-h-screen px-4 sm:px-6 lg:px-10'>
+      <div className="flex flex-col sm:flex-row gap-2 mb-2 mt-1 py-4 sm:py-6 lg:py-10 pb-2">
+        <input 
+          type="text" 
+          value={inputValue} 
+          onKeyDown={handleKeyPress}
+          onChange={(e) => setInputValue(e.target.value)} 
+          placeholder="Search" 
+          className="flex-1 px-3 sm:px-4 py-3 sm:py-4 lg:py-5 border border-gray-700 rounded-2xl text-sm sm:text-base"/>
+        <button 
+          onClick={handleSearch} 
+          className="px-4 sm:px-6 py-3 sm:py-4 lg:py-2 bg-gray-500 text-white hover:bg-gray-900 rounded-2xl text-sm sm:text-base whitespace-nowrap">
+          Search
+        </button>
+      </div>
+      <div className="mb-4">
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm sm:text-base">
+          Filters
+        </button>
+      </div>
+      <div className={`flex flex-col mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg border transition-all duration-300 ${
+        showFilters ? 'max-h-120 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+        <select 
+          id="age" 
+          value={selectedAge} 
+          onChange={(e) => setSelectedAge(e.target.value)} 
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          <option value="">-- Select Age Group --</option>
+          <option value="child">Age: Child</option>
+          <option value="youngadult">Age: Young Adult</option>
+          <option value="adolescent">Age: Adolescent</option>
+          <option value="adult">Age: Adult</option>
+        </select>
+
+        <select 
+          id="gender" 
+          value={selectedGender} 
+          onChange={(e) => setSelectedGender(e.target.value)} 
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          <option value="">-- Select Gender --</option>
+          <option value="onlyfemale">Gender: Female (only)</option>
+          <option value="primarilyfemale">Gender: Female (mostly)</option>
+          <option value="onlymale">Gender: Male (only)</option>
+          <option value="primarilymale">Gender: Female (mostly)</option>
+          <option value="onlynonbinary">Gender: Non-binary (only)</option>
+          <option value="primarilynonbinary">Gender: Non-binary (mostly)</option>
+          <option value="transgender">Gender: Transgender</option>
+        </select>
+
+        <select 
+          id="language" 
+          value={selectedLanguage} 
+          onChange={(e) => setSelectedLanguage(e.target.value)} 
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          <option value="">-- Select Language Type --</option>
+          <option value="personfirst"> Language Type: Person First</option>
+          <option value="identityfirst">Language Type: Identity First</option>
+          <option value="mixed">Language Type: Mixed</option>
+        </select>
+
+        <select 
+          id="participantnumber" 
+          value={selectedParticipantNumber} 
+          onChange={(e) => setSelectedParticipantNumber(e.target.value)} 
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          <option value="">-- Select Participant Size --</option>
+          <option value="small">Participant Size: Small</option>
+          <option value="medium">Participant Size: Medium</option>
+          <option value="large">Participant Size: Large</option>
+        </select>
+
+        <select 
+          id="targetuser" 
+          value={selectedTargetUser} 
+          onChange={(e) => setSelectedTargetUser(e.target.value)} 
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          <option value="">-- Select Target User Type --</option>
+          <option value="researchers">Target User: Researchers</option>
+          <option value="autisticpeople">Target User: Persons with Autism</option>
+          <option value="parents">Target User: Parents</option>
+          <option value="teachers">Target User: Teachers</option>
+          <option value="caregivers">Target User: Caregivers</option>
+        </select>
+
+        <select 
+          id="technology" 
+          value={selectedTechnology} 
+          onChange={(e) => setSelectedTechnology(e.target.value)} 
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          <option value="">-- Select Technology Type --</option>
+          <option value="machinelearning">Technology: Machine Learning</option>
+          <option value="robot">Technology: Robot</option>
+          <option value="fMRI">Technology: fMRI</option>
+          <option value="virtualreality">Technology: VR</option>
+          <option value="game">Technology: Game</option>
+          <option value="eyetracking">Technology: Eye Tracking</option>
+          <option value="neuralnetwork">Technology: Neural Network</option>
+          <option value="facialrecognition">Technology: Facial Recognition</option>
+          <option value="deeplearning">Technology: Deep Learning</option>
+          <option value="literaturereview">Technology: Literature Review</option>
+          <option value="mobileapp">Technology: Mobile App</option>
+        </select>
+
+        <select 
+          id="challenge" 
+          value={selectedChallenge} 
+          onChange={(e) => setSelectedChallenge(e.target.value)} 
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          <option value="">-- Select Challenge Type --</option>
+          <option value="social">Challenge: Social</option>
+          <option value="communication">Challenge: Communication</option>
+          <option value="repetitivebehavior">Challenge: Repetitive Behavior</option>
+          <option value="emotion">Challenge: Emotion</option>
+        </select>
+        <button className='mx-1 my-2 p-2 rounded border text-sm sm:test-base' onClick={() => resetFilters()}>Reset</button>
+      </div>
+
+      {data && length > 0 && (
+        <h1 className='text-gray-500 mb-2 text-sm sm:text-base'>{length} Responses</h1>
+      )}
+
+      <div className="h-[65vh] sm:h-215 overflow-y-auto bg-white rounded-lg shadow-lg border border-gray-200 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+        {loading && (
+          <div className="p-4 text-gray-400 text-center">Loading...</div>
+        )}
+        {!loading && length === 0 && (
+          <div className="p-4 text-red-400 text-center">No Entries Found</div>
+        )}
+        {!loading && length > 0 && (
+          <div className="p-2 sm:p-4">
+            {data.slice(0, visibleCount).map((entry, index) => (
+              <ArticleBox key={index} article={entry} searchQuery={search}/>
+            ))}
+            {visibleCount < length && (
+              <div className="text-center py-4">
+                <button 
+                  onClick={loadMore}
+                  className="px-6 py-3 text-black rounded-lg border-black bg-gray-200">
+                  Load More
+                </button>
+              </div>
+            )}
           </div>
+        )}
+      </div>
+      <div className="mt-6 bg-white rounded-lg shadow-lg border border-gray-200">
+        <YearChart filters={currentFilters} />
+        <div className='grid grid-cols-2 gap-2'>
         </div>
-      );
+      </div>
+    </div>
+    <Footer />
+    </div>
+  );
 }
