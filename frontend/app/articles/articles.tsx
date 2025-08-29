@@ -1,10 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Footer } from '../footer/footer'
 import { ArticleBox } from '~/articleBox/articleBox';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
+
 
 function YearChart({ filters }) {
+  const COLORS = [
+    '#6366F1',
+    '#10B981', 
+    '#F59E0B', 
+    '#EF4444', 
+    '#8B5CF6', 
+    '#06B6D4', 
+    '#84CC16', 
+    '#F97316', 
+    '#EC4899', 
+    '#64748B'
+  ];
   const [chartData, setChartData] = useState([]);
+  const [pieData, setPieData] = useState([]);
+  const [journalData, setJournalData] = useState([]);
+
   useEffect(() => {
     const fetchChartData = async () => {
       try {
@@ -16,9 +32,11 @@ function YearChart({ filters }) {
           targetuser: filters.selectedTargetUser || '',
           technology: filters.selectedTechnology || '',
           gender: filters.selectedGender || '',
-          challenge: filters.selectedChallenge || ''
+          challenge: filters.selectedChallenge || '',
+          problem: filters.selectedProblem|| ''
         });
-        const response = await fetch(`http://127.0.0.1:5055/api/visualizations?${queryParams}`);
+        const response = await fetch(`http://127.0.0.1:5055/api/visualizations/yeardistribution?${queryParams}`);
+        console.log(`http://127.0.0.1:5055/api/visualizations/yeardistribution?${queryParams}`);
         const data = await response.json();
         if (data.success) {
           setChartData(data.data || []);
@@ -30,6 +48,62 @@ function YearChart({ filters }) {
     };
     fetchChartData();
   }, [filters]);
+
+  useEffect(() => {
+    const fetchPieData = async () => {
+      try {
+        const queryParams = new URLSearchParams({
+          q: filters.search || '',
+          age: filters.selectedAge || '',
+          language: filters.selectedLanguage || '',
+          participantnumber: filters.selectedParticipantNumber || '',
+          targetuser: filters.selectedTargetUser || '',
+          technology: filters.selectedTechnology || '',
+          gender: filters.selectedGender || '',
+          challenge: filters.selectedChallenge || '',
+          problem: filters.selectedProblem|| ''
+        });
+        const response = await fetch(`http://127.0.0.1:5055/api/visualizations/technologydistribution?${queryParams}`);
+        const data = await response.json();
+        if (data.success) {
+          setPieData(data.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch chart data:', error);
+        setPieData([]);
+      }
+    };
+    fetchPieData();
+  }, [filters]);
+
+  useEffect(() => {
+    const fetchJournalData = async () => {
+      try {
+        const queryParams = new URLSearchParams({
+          q: filters.search || '',
+          age: filters.selectedAge || '',
+          language: filters.selectedLanguage || '',
+          participantnumber: filters.selectedParticipantNumber || '',
+          targetuser: filters.selectedTargetUser || '',
+          technology: filters.selectedTechnology || '',
+          gender: filters.selectedGender || '',
+          challenge: filters.selectedChallenge || '',
+          problem: filters.selectedProblem|| ''
+        });
+        const response = await fetch(`http://127.0.0.1:5055/api/visualizations/journaldistribution?${queryParams}`);
+        const data = await response.json();
+        if (data.success) {
+          setJournalData(data.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch chart data:', error);
+        setJournalData([]);
+      }
+    };
+    fetchJournalData();
+  }, [filters]);
+  
+  
   return (
     <div>
       <div className="p-4">
@@ -37,15 +111,44 @@ function YearChart({ filters }) {
       </div>
       <div className="p-4">
         <div className="bg-gray-50 p-4 m-2 rounded-lg">
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="year" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="count" fill="#8884d8" />
+              <Bar dataKey="count" fill="#10B981" />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+
+        <div className='flex flex-row'>
+          <div className='bg-gray-50 p-4 m-2 rounded-lg w-1/2'>
+            <h3 className="text-lg font-semibold text-center mb-4">Distribution of Technologies used</h3>
+            <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Tooltip />
+              <Pie data={pieData} dataKey="count" nameKey="technology" cx="50%" cy="50%" fill="#8884d8">
+              {pieData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}            
+              </Pie> 
+            </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className='bg-gray-50 p-4 m-2 rounded-lg w-1/2'>
+            <h3 className="text-lg font-semibold text-center mb-4">Distribution of Journal</h3>
+            <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Tooltip />
+              <Pie data={journalData} dataKey="count" nameKey="journal" cx="50%" cy="50%" fill="#8884d8">
+              {journalData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}            
+              </Pie> 
+            </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>
@@ -58,7 +161,7 @@ export default function Articles() {
   const [length, setLength] = useState(0);
   const [data, setData] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [visibleCount, setVisibleCount] = useState(10);
   const ITEMS_PER_LOAD = 10;
@@ -71,6 +174,7 @@ export default function Articles() {
   const [selectedTechnology, setSelectedTechnology] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
   const [selectedChallenge, setSelectedChallenge] = useState('');
+  const [selectedProblem, setSelectedProblem] = useState('');
 
   const handleSearch = () => {
     setSearch(inputValue);
@@ -95,6 +199,7 @@ export default function Articles() {
     setSelectedTechnology('');
     setSelectedGender('');
     setSelectedChallenge('');
+    setSelectedProblem('');
     setInputValue('');
     setSearch('');
     setVisibleCount(10);
@@ -102,7 +207,7 @@ export default function Articles() {
 
   // API Request. Dependencies on filter and search state.
   useEffect(() => {
-    if (search || selectedAge || selectedLanguage || selectedParticipantNumber || selectedTargetUser || selectedTechnology || selectedGender || selectedChallenge) {
+    if (search || selectedAge || selectedLanguage || selectedParticipantNumber || selectedTargetUser || selectedTechnology || selectedGender || selectedChallenge || selectedProblem) {
       setLoading(true);
       setVisibleCount(10); // Reset visible count when filters change
       fetch(`http://127.0.0.1:5055/api/data?` +
@@ -113,7 +218,8 @@ export default function Articles() {
       `targetuser=${encodeURIComponent(selectedTargetUser)}&` +
       `technology=${encodeURIComponent(selectedTechnology)}&` +
       `gender=${encodeURIComponent(selectedGender)}&` +
-      `challenge=${encodeURIComponent(selectedChallenge)}`)
+      `challenge=${encodeURIComponent(selectedChallenge)}&` +
+      `problem=${encodeURIComponent(selectedProblem)}`)
         .then(response => response.json())
         .then(response => {
           setData(response.data);
@@ -139,7 +245,7 @@ export default function Articles() {
           console.log("API request failed.", error);
         });
     }
-  }, [search, selectedAge, selectedLanguage, selectedParticipantNumber, selectedTargetUser, selectedTechnology, selectedGender, selectedChallenge]);
+  }, [search, selectedAge, selectedLanguage, selectedParticipantNumber, selectedTargetUser, selectedTechnology, selectedGender, selectedChallenge, selectedProblem]);
 
   // Prepare filter object for visualization component
   const currentFilters = {
@@ -150,13 +256,14 @@ export default function Articles() {
     selectedTargetUser,
     selectedTechnology,
     selectedGender,
-    selectedChallenge
+    selectedChallenge,
+    selectedProblem
   };
 
   return (
     <div>
     <div className='min-h-screen px-4 sm:px-6 lg:px-10'>
-      <div className="flex flex-col sm:flex-row gap-2 mb-2 mt-1 py-4 sm:py-6 lg:py-10 pb-2">
+      <div className="flex flex-col sm:flex-row gap-2 mt-1 pt-4 sm:pt-6 lg:pt-10 pb-5">
         <input 
           type="text" 
           value={inputValue} 
@@ -164,26 +271,27 @@ export default function Articles() {
           onChange={(e) => setInputValue(e.target.value)} 
           placeholder="Search" 
           className="flex-1 px-3 sm:px-4 py-3 sm:py-4 lg:py-5 border border-gray-700 rounded-2xl text-sm sm:text-base"/>
+        <select 
+          id="age" 
+          className='mx-1 p-2 rounded-2xl border text-sm sm:text-base bg-gray-50 text-center'>
+          <option value="">Sort by</option>
+          <option value="child">Year - Ascending</option>
+          <option value="adolescent">Year Descending</option>
+        </select>
         <button 
           onClick={handleSearch} 
-          className="px-4 sm:px-6 py-3 sm:py-4 lg:py-2 bg-gray-500 text-white hover:bg-gray-900 rounded-2xl text-sm sm:text-base whitespace-nowrap">
+          className="px-4 sm:px-20 py-3 sm:py-4 lg:py-2 bg-gray-500 text-white rounded-2xl text-sm sm:text-base whitespace-nowrap">
           Search
         </button>
+        <button className='px-4 sm:px-20 py-3 sm:py-4 lg:py-2 bg-red-400 text-white rounded-2xl text-sm sm:text-base whitespace-nowrap' onClick={() => resetFilters()}>Reset</button>
       </div>
-      <div className="mb-4">
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm sm:text-base">
-          Filters
-        </button>
-      </div>
-      <div className={`flex flex-col mb-6 p-3 sm:p-4 bg-gray-50 rounded-lg border transition-all duration-300 ${
-        showFilters ? 'max-h-120 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+
+      <div className={`flex flex-row flex-wrap p-3 mb-5 sm:p-4 bg-gray-75 rounded-lg border transition-all duration-300 max-h-150 opacity-100`}>
         <select 
           id="age" 
           value={selectedAge} 
           onChange={(e) => setSelectedAge(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
           <option value="">-- Select Age Group --</option>
           <option value="child">Age: Child</option>
           <option value="youngadult">Age: Young Adult</option>
@@ -195,7 +303,7 @@ export default function Articles() {
           id="gender" 
           value={selectedGender} 
           onChange={(e) => setSelectedGender(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
           <option value="">-- Select Gender --</option>
           <option value="onlyfemale">Gender: Female (only)</option>
           <option value="primarilyfemale">Gender: Female (mostly)</option>
@@ -210,18 +318,19 @@ export default function Articles() {
           id="language" 
           value={selectedLanguage} 
           onChange={(e) => setSelectedLanguage(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
           <option value="">-- Select Language Type --</option>
           <option value="personfirst"> Language Type: Person First</option>
           <option value="identityfirst">Language Type: Identity First</option>
           <option value="mixed">Language Type: Mixed</option>
+          <option value="avoidant">Language Type: Avoidant</option>
         </select>
 
         <select 
           id="participantnumber" 
           value={selectedParticipantNumber} 
           onChange={(e) => setSelectedParticipantNumber(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
           <option value="">-- Select Participant Size --</option>
           <option value="small">Participant Size: Small</option>
           <option value="medium">Participant Size: Medium</option>
@@ -232,7 +341,7 @@ export default function Articles() {
           id="targetuser" 
           value={selectedTargetUser} 
           onChange={(e) => setSelectedTargetUser(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
           <option value="">-- Select Target User Type --</option>
           <option value="researchers">Target User: Researchers</option>
           <option value="autisticpeople">Target User: Persons with Autism</option>
@@ -245,7 +354,7 @@ export default function Articles() {
           id="technology" 
           value={selectedTechnology} 
           onChange={(e) => setSelectedTechnology(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
           <option value="">-- Select Technology Type --</option>
           <option value="machinelearning">Technology: Machine Learning</option>
           <option value="robot">Technology: Robot</option>
@@ -264,49 +373,63 @@ export default function Articles() {
           id="challenge" 
           value={selectedChallenge} 
           onChange={(e) => setSelectedChallenge(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
           <option value="">-- Select Challenge Type --</option>
           <option value="social">Challenge: Social</option>
           <option value="communication">Challenge: Communication</option>
           <option value="repetitivebehavior">Challenge: Repetitive Behavior</option>
           <option value="emotion">Challenge: Emotion</option>
         </select>
-        <button className='mx-1 my-2 p-2 rounded border text-sm sm:test-base' onClick={() => resetFilters()}>Reset</button>
+
+        <select 
+          id="problem" 
+          value={selectedProblem} 
+          onChange={(e) => setSelectedProblem(e.target.value)} 
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
+          <option value="">-- Select Problem Type --</option>
+          <option value="intervention">Problem: Intervention</option>
+          <option value="diagnosis">Problem: Diagnosis</option>
+        </select>
       </div>
 
       {data && length > 0 && (
-        <h1 className='text-gray-500 mb-2 text-sm sm:text-base'>{length} Responses</h1>
+        <h1 className='text-gray-500 mb-2 text-sm sm:text-base'>{length} Responses - <b> {((length / 2709)*100).toFixed(2)}% </b> of total dataset</h1>
       )}
 
-      <div className="h-[65vh] sm:h-215 overflow-y-auto bg-white rounded-lg shadow-lg border border-gray-200 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-        {loading && (
-          <div className="p-4 text-gray-400 text-center">Loading...</div>
-        )}
-        {!loading && length === 0 && (
-          <div className="p-4 text-red-400 text-center">No Entries Found</div>
-        )}
-        {!loading && length > 0 && (
-          <div className="p-2 sm:p-4">
-            {data.slice(0, visibleCount).map((entry, index) => (
-              <ArticleBox key={index} article={entry} searchQuery={search}/>
-            ))}
-            {visibleCount < length && (
-              <div className="text-center py-4">
-                <button 
-                  onClick={loadMore}
-                  className="px-6 py-3 text-black rounded-lg border-black bg-gray-200">
-                  Load More
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="mt-6 bg-white rounded-lg shadow-lg border border-gray-200">
-        <YearChart filters={currentFilters} />
-        <div className='grid grid-cols-2 gap-2'>
+      <div className='grid grid-cols-2 gap-5'>
+        <div className="h-[75vh] sm:h-235 overflow-y-auto bg-white rounded-lg shadow-lg border border-gray-200 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+          {loading && (
+            <div className="p-4 text-gray-400 text-center">Loading...</div>
+          )}
+          {!loading && length === 0 && (
+            <div className="p-4 text-red-400 text-center">No Entries Found</div>
+          )}
+          {!loading && length > 0 && (
+            <div className="p-2 sm:p-4">
+              {data.slice(0, visibleCount).map((entry, index) => (
+                <ArticleBox key={index} article={entry} searchQuery={search}/>
+              ))}
+              {visibleCount < length && (
+                <div className="text-center py-4">
+                  <button 
+                    onClick={loadMore}
+                    className="px-6 py-3 text-black rounded-lg border-black bg-gray-200">
+                    Load More
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
+        
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200">
+          <YearChart filters={currentFilters} />
+          <div className='grid grid-cols-2 gap-2'>
+          </div>
+        </div>
+
       </div>
+
     </div>
     <Footer />
     </div>
