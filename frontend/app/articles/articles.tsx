@@ -17,6 +17,7 @@ function YearChart({ filters }) {
     '#EC4899', 
     '#64748B'
   ];
+
   const [chartData, setChartData] = useState([]);
   const [pieData, setPieData] = useState([]);
   const [journalData, setJournalData] = useState([]);
@@ -33,7 +34,8 @@ function YearChart({ filters }) {
           technology: filters.selectedTechnology || '',
           gender: filters.selectedGender || '',
           challenge: filters.selectedChallenge || '',
-          problem: filters.selectedProblem|| ''
+          problem: filters.selectedProblem|| '',
+          dataset: filters.selectedDataset|| ''
         });
         const response = await fetch(`http://127.0.0.1:5055/api/visualizations/yeardistribution?${queryParams}`);
         console.log(`http://127.0.0.1:5055/api/visualizations/yeardistribution?${queryParams}`);
@@ -61,7 +63,8 @@ function YearChart({ filters }) {
           technology: filters.selectedTechnology || '',
           gender: filters.selectedGender || '',
           challenge: filters.selectedChallenge || '',
-          problem: filters.selectedProblem|| ''
+          problem: filters.selectedProblem|| '',
+          dataset: filters.selectedDataset|| ''
         });
         const response = await fetch(`http://127.0.0.1:5055/api/visualizations/technologydistribution?${queryParams}`);
         const data = await response.json();
@@ -88,7 +91,8 @@ function YearChart({ filters }) {
           technology: filters.selectedTechnology || '',
           gender: filters.selectedGender || '',
           challenge: filters.selectedChallenge || '',
-          problem: filters.selectedProblem|| ''
+          problem: filters.selectedProblem|| '',
+          dataset: filters.selectedDataset|| ''
         });
         const response = await fetch(`http://127.0.0.1:5055/api/visualizations/journaldistribution?${queryParams}`);
         const data = await response.json();
@@ -176,6 +180,8 @@ export default function Articles() {
   const [selectedChallenge, setSelectedChallenge] = useState('');
   const [selectedProblem, setSelectedProblem] = useState('');
 
+  const [selectedDataset, setSelectedDataset] = useState('');
+
   const handleSearch = () => {
     setSearch(inputValue);
     setVisibleCount(10);
@@ -202,12 +208,13 @@ export default function Articles() {
     setSelectedProblem('');
     setInputValue('');
     setSearch('');
+    setSelectedDataset('');
     setVisibleCount(10);
   };
 
   // API Request. Dependencies on filter and search state.
   useEffect(() => {
-    if (search || selectedAge || selectedLanguage || selectedParticipantNumber || selectedTargetUser || selectedTechnology || selectedGender || selectedChallenge || selectedProblem) {
+    if (search || selectedAge || selectedLanguage || selectedParticipantNumber || selectedTargetUser || selectedTechnology || selectedGender || selectedChallenge || selectedProblem || selectedDataset) {
       setLoading(true);
       setVisibleCount(10); // Reset visible count when filters change
       fetch(`http://127.0.0.1:5055/api/data?` +
@@ -219,7 +226,8 @@ export default function Articles() {
       `technology=${encodeURIComponent(selectedTechnology)}&` +
       `gender=${encodeURIComponent(selectedGender)}&` +
       `challenge=${encodeURIComponent(selectedChallenge)}&` +
-      `problem=${encodeURIComponent(selectedProblem)}`)
+      `problem=${encodeURIComponent(selectedProblem)}&` +
+      `dataset=${encodeURIComponent(selectedDataset)}`)
         .then(response => response.json())
         .then(response => {
           setData(response.data);
@@ -245,7 +253,7 @@ export default function Articles() {
           console.log("API request failed.", error);
         });
     }
-  }, [search, selectedAge, selectedLanguage, selectedParticipantNumber, selectedTargetUser, selectedTechnology, selectedGender, selectedChallenge, selectedProblem]);
+  }, [search, selectedAge, selectedLanguage, selectedParticipantNumber, selectedTargetUser, selectedTechnology, selectedGender, selectedChallenge, selectedProblem, selectedDataset]);
 
   // Prepare filter object for visualization component
   const currentFilters = {
@@ -271,19 +279,24 @@ export default function Articles() {
           onChange={(e) => setInputValue(e.target.value)} 
           placeholder="Search" 
           className="flex-1 px-3 sm:px-4 py-3 sm:py-4 lg:py-5 border border-gray-700 rounded-2xl text-sm sm:text-base"/>
+          
         <select 
-          id="age" 
-          className='mx-1 p-2 rounded-2xl border text-sm sm:text-base bg-gray-50 text-center'>
-          <option value="">Sort by</option>
-          <option value="child">Year - Ascending</option>
-          <option value="adolescent">Year Descending</option>
+          id="dataset" 
+          value={selectedDataset}
+          onChange={(e) => setSelectedDataset(e.target.value)}
+          className='mx-2 p-2 rounded border text-sm sm:text-base bg-gray-50 text-center'>
+          <option value="">Dataset</option>
+          <option value="ACM Digital Library">ACM</option>
+          <option value="IEEE Explore">IEEE</option>
         </select>
+
         <button 
           onClick={handleSearch} 
-          className="px-4 sm:px-20 py-3 sm:py-4 lg:py-2 bg-gray-500 text-white rounded-2xl text-sm sm:text-base whitespace-nowrap">
+          className="px-4 sm:px-20 py-3 sm:py-4 lg:py-2 bg-[#9095a0] text-white rounded-2xl text-sm sm:text-base whitespace-nowrap shadow-sm bg-gray-400 hover:bg-gray-600 hover:shadow-lg transition-all duration-300 cursor-pointer">
           Search
         </button>
-        <button className='px-4 sm:px-20 py-3 sm:py-4 lg:py-2 bg-red-400 text-white rounded-2xl text-sm sm:text-base whitespace-nowrap' onClick={() => resetFilters()}>Reset</button>
+        <button className='px-4 sm:px-20 py-3 sm:py-4 lg:py-2 bg-red-400 text-white rounded-2xl text-sm sm:text-base whitespace-nowrap 
+          shadow-sm bg-red-450 hover:bg-red-600 hover:shadow-lg transition-all duration-300 cursor-pointer' onClick={() => resetFilters()}>Reset</button>
       </div>
 
       <div className={`flex flex-row flex-wrap p-3 mb-5 sm:p-4 bg-gray-75 rounded-lg border transition-all duration-300 max-h-150 opacity-100`}>

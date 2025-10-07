@@ -16,6 +16,7 @@ def search_data():
     with sqlite3.connect(DB_PATH) as conn:
         # Extract query parameters convert for use in SQL query.
         search_term = request.args.get('q', '').lower()
+        dataset = request.args.get('dataset', '')
         filter_mapping = {
             'challenge': request.args.get('challenge', '').lower(),
             'targetuser': request.args.get('targetuser', '').lower(),
@@ -33,7 +34,7 @@ def search_data():
         }
         filter_list = [f"{key}_{value}" for key, value in filter_mapping.items() if value and value.strip()]
         placeholders = ','.join('?' * len(filter_list))
-        
+
         # Create and execute SQL query based on users filter and search options.
         if (len(filter_list) == 0):
             response = conn.execute("""
@@ -77,6 +78,7 @@ def search_data():
 def get_year_distribution():
     with sqlite3.connect(DB_PATH) as conn:
         search_term = request.args.get('q', '').lower()
+        dataset = request.args.get('dataset', '')
         filter_mapping = {
             'challenge': request.args.get('challenge', '').lower(),
             'targetuser': request.args.get('targetuser', '').lower(),
@@ -140,6 +142,7 @@ def get_year_distribution():
 def get_technology_distribution():
     with sqlite3.connect(DB_PATH) as conn:
         search_term = request.args.get('q', '').lower()
+        dataset = request.args.get('dataset', '')
         filter_mapping = {
             'challenge': request.args.get('challenge', '').lower(),
             'targetuser': request.args.get('targetuser', '').lower(),
@@ -157,6 +160,7 @@ def get_technology_distribution():
         }
         filter_list = [f"{key}_{value}" for key, value in filter_mapping.items() if value and value.strip()]
         placeholders = ','.join('?' * len(filter_list))
+        
         if len(filter_list) == 0:
             tech_query = """
                 SELECT
@@ -174,6 +178,7 @@ def get_technology_distribution():
                 LIMIT 8;
             """
             tech_params = [f'%{search_term}%', f'%{search_term}%']
+
         else:
             tech_query = f"""
                 SELECT
@@ -213,6 +218,7 @@ def get_technology_distribution():
 def get_journal_distribution():
     with sqlite3.connect(DB_PATH) as conn:
         search_term = request.args.get('q', '').lower()
+        dataset = request.args.get('dataset', '')
         filter_mapping = {
             'challenge': request.args.get('challenge', '').lower(),
             'targetuser': request.args.get('targetuser', '').lower(),
