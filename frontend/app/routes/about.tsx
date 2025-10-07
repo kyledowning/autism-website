@@ -50,12 +50,6 @@ export default function About() {
               a functional and accessible web application that serves as a public facing interface for accessing our autism research database. We strived to incorporate visual features within our website
               with the ability to export them for personal use.
             </p>
-            <p className="text-lg text-center">
-              Our approach combines strategic thinking with hands-on execution, ensuring 
-              that ideas transform into tangible results. We value open communication, 
-              continuous improvement, and the power of diverse perspectives in solving 
-              complex challenges.
-            </p>
           </div>
             <div className="mb-12">
             <h2 className="text-3xl font-light text-gray-800 text-center mb-12">Our Team</h2>
