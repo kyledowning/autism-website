@@ -42,8 +42,7 @@ export default function About() {
           </div>
           <div className="max-w-3xl mx-auto mb-20 space-y-6 text-gray-600 leading-relaxed">
             <p className="text-lg text-center">
-              We are a dedicated team of student researchers working with the NEATLab at Western Washington University. Our diverse skill sets and shared 
-              passion for excellence drive us to push boundaries and create meaningful solutions.
+              We are a dedicated team of student researchers working with the NEAT Lab at Western Washington University. We are devoted to developing technologies that benefit humanity for the greater good.
             </p>
             <p className="text-lg text-center">
               We started this project to help a broad range of people gain access to insightful knowledge and information regarding autsim research. The goal is to deliver
@@ -76,7 +75,7 @@ export default function About() {
           </div>
         </div>
         <h2 className="text-3xl font-light text-gray-800 text-center mb-12">Contact Us</h2>
-          <div className="max-w-3xl mx-auto mb-20 space-y-6 text-gray-600 leading-relaxed">
+          <div className="max-w-3xl mx-auto mb-20 px-7 space-y-6 text-gray-600 leading-relaxed">
             <p className="text-lg text-center mb-12 max-w-3xl"> 
                 As this is a relatively new project in the stages of development, we are open to any and all constructive feedback regarding your experience with this website.
                 Further, if you have any additional questions or comments regarding our project don't hesitate to reach out!

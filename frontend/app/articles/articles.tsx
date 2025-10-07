@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Footer } from '../footer/footer'
 import { ArticleBox } from '~/articleBox/articleBox';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 
@@ -280,7 +279,7 @@ export default function Articles() {
           placeholder="Search" 
           className="flex-1 px-3 sm:px-4 py-3 sm:py-4 lg:py-5 border border-gray-700 rounded-2xl text-sm sm:text-base"/>
           
-        <select 
+        {/* <select 
           id="dataset" 
           value={selectedDataset}
           onChange={(e) => setSelectedDataset(e.target.value)}
@@ -288,7 +287,7 @@ export default function Articles() {
           <option value="">Dataset</option>
           <option value="ACM Digital Library">ACM</option>
           <option value="IEEE Explore">IEEE</option>
-        </select>
+        </select> */}
 
         <button 
           onClick={handleSearch} 
@@ -304,7 +303,7 @@ export default function Articles() {
           id="age" 
           value={selectedAge} 
           onChange={(e) => setSelectedAge(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base text-center bg-gray-50 lg:w-auto w-100'>
           <option value="">-- Select Age Group --</option>
           <option value="child">Age: Child</option>
           <option value="youngadult">Age: Young Adult</option>
@@ -316,7 +315,7 @@ export default function Articles() {
           id="gender" 
           value={selectedGender} 
           onChange={(e) => setSelectedGender(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base text-center bg-gray-50 lg:w-auto w-100'>
           <option value="">-- Select Gender --</option>
           <option value="onlyfemale">Gender: Female (only)</option>
           <option value="primarilyfemale">Gender: Female (mostly)</option>
@@ -331,7 +330,7 @@ export default function Articles() {
           id="language" 
           value={selectedLanguage} 
           onChange={(e) => setSelectedLanguage(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base text-center bg-gray-50 lg:w-auto w-100'>
           <option value="">-- Select Language Type --</option>
           <option value="personfirst"> Language Type: Person First</option>
           <option value="identityfirst">Language Type: Identity First</option>
@@ -343,7 +342,7 @@ export default function Articles() {
           id="participantnumber" 
           value={selectedParticipantNumber} 
           onChange={(e) => setSelectedParticipantNumber(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base text-center bg-gray-50 lg:w-auto w-100'>
           <option value="">-- Select Participant Size --</option>
           <option value="small">Participant Size: Small</option>
           <option value="medium">Participant Size: Medium</option>
@@ -354,7 +353,7 @@ export default function Articles() {
           id="targetuser" 
           value={selectedTargetUser} 
           onChange={(e) => setSelectedTargetUser(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base text-center bg-gray-50 lg:w-auto w-100'>
           <option value="">-- Select Target User Type --</option>
           <option value="researchers">Target User: Researchers</option>
           <option value="autisticpeople">Target User: Persons with Autism</option>
@@ -367,7 +366,7 @@ export default function Articles() {
           id="technology" 
           value={selectedTechnology} 
           onChange={(e) => setSelectedTechnology(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base text-center bg-gray-50 lg:w-auto w-100'>
           <option value="">-- Select Technology Type --</option>
           <option value="machinelearning">Technology: Machine Learning</option>
           <option value="robot">Technology: Robot</option>
@@ -386,7 +385,7 @@ export default function Articles() {
           id="challenge" 
           value={selectedChallenge} 
           onChange={(e) => setSelectedChallenge(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base text-center bg-gray-50 lg:w-auto w-100'>
           <option value="">-- Select Challenge Type --</option>
           <option value="social">Challenge: Social</option>
           <option value="communication">Challenge: Communication</option>
@@ -398,7 +397,7 @@ export default function Articles() {
           id="problem" 
           value={selectedProblem} 
           onChange={(e) => setSelectedProblem(e.target.value)} 
-          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base bg-gray-50'>
+          className='mx-1 my-2 p-2 rounded border text-sm sm:text-base text-center bg-gray-50 lg:w-auto w-100'>
           <option value="">-- Select Problem Type --</option>
           <option value="intervention">Problem: Intervention</option>
           <option value="diagnosis">Problem: Diagnosis</option>
@@ -409,7 +408,7 @@ export default function Articles() {
         <h1 className='text-gray-500 mb-2 text-sm sm:text-base'>{length} Responses - <b> {((length / 2709)*100).toFixed(2)}% </b> of total dataset</h1>
       )}
 
-      <div className='grid grid-cols-2 gap-5'>
+      <div className='grid grid-cols-1 gap-5 md:grid md:grid-cols-2 md:gap-5 mb-15'>
         <div className="h-[75vh] sm:h-235 overflow-y-auto bg-white rounded-lg shadow-lg border border-gray-200 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
           {loading && (
             <div className="p-4 text-gray-400 text-center">Loading...</div>
@@ -434,17 +433,13 @@ export default function Articles() {
             </div>
           )}
         </div>
-        
         <div className="bg-white rounded-lg shadow-lg border border-gray-200">
           <YearChart filters={currentFilters} />
           <div className='grid grid-cols-2 gap-2'>
           </div>
         </div>
-
       </div>
-
     </div>
-    <Footer />
     </div>
   );
 }

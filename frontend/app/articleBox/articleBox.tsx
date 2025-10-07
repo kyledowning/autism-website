@@ -17,7 +17,7 @@ export function ArticleBox ( { article, searchQuery } ) {
         <div className={`p-4 m-5 rounded-xl shadow-sm cursor-pointer bg-white border border-gray-200 hover:bg-gray-200 transition-colors duration-300 ease-in-out`}
               onClick={() => window.open(article.urls, '_blank', 'noopener,noreferrer')}>
             <h3 className="text-lg font-semibold text-gray-800 mb-3">{highlightKeyword(article.title, searchQuery)}</h3>
-            <p className="text-gray-700 leading-relaxed">{highlightKeyword(article.abstract, searchQuery)}</p>
+            <p className="text-gray-700 leading-relaxed line-clamp-5 md:line-clamp-25">{highlightKeyword(article.abstract, searchQuery)}</p>
             
             <div className="flex flex-row flex-wrap gap-2 space-between mt-2">           
             {article.keywords && article.keywords.split(';').length > 1 && article.keywords.split(';').map((keyword, index) => (
