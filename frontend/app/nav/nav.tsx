@@ -7,6 +7,7 @@ export function Nav() {
           <div className="flex space-x-8">
             <a href="/" className="text-gray-600 hover:text-gray-900">Home</a>
             <a href="/search" className="text-gray-600 hover:text-gray-900">Search</a>
+            <a href="/about" className="text-gray-600 hover:text-gray-900">Search</a>
           </div>
         </div>
       </nav>
