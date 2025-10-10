@@ -42,14 +42,14 @@ def search_data():
             if (len(filter_list) == 0):
                 if dataset:
                     response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords
+                        SELECT DISTINCT urls, doi, title, abstract, keywords
                         FROM paper
                         WHERE (abstract LIKE ? OR title LIKE ?) AND dataset = ?
                         ORDER BY year desc
                     """, (f'%{search_term}%', f'%{search_term}%', dataset)).fetchall()
                 else:
                     response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords
+                        SELECT DISTINCT urls, doi, title, abstract, keywords
                         FROM paper
                         WHERE abstract LIKE ? OR title LIKE ?
                         ORDER BY year desc
@@ -57,7 +57,7 @@ def search_data():
             else:
                 if dataset:
                     response = conn.execute(f"""
-                        SELECT urls, doi, title, dataset, abstract, keywords
+                        SELECT urls, doi, title, abstract, keywords
                         FROM Paper p
                         WHERE p.id IN (
                             SELECT paper_id
@@ -70,7 +70,7 @@ def search_data():
                     """, filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]).fetchall()
                 else:
                     response = conn.execute(f"""
-                        SELECT urls, doi, title, dataset, abstract, keywords
+                        SELECT urls, doi, title, abstract, keywords
                         FROM Paper p
                         WHERE p.id IN (
                             SELECT paper_id
@@ -87,7 +87,7 @@ def search_data():
             if (len(filter_list) == 0):
                 if dataset:
                     response = conn.execute("""
-                        SELECT DISTINCT urls, doi, dataset, title, abstract, keywords
+                        SELECT DISTINCT urls, doi, title, abstract, keywords
                         FROM paper as p
                         LEFT JOIN PaperText as t
                         ON p.id = t.id
@@ -96,7 +96,7 @@ def search_data():
                     """, (f'%{search_term}%', dataset)).fetchall()
                 else:
                     response = conn.execute("""
-                        SELECT DISTINCT urls, doi, dataset, title, abstract, keywords
+                        SELECT DISTINCT urls, doi, title, abstract, keywords
                         FROM paper as p
                         LEFT JOIN PaperText as t
                         ON p.id = t.id
@@ -106,7 +106,7 @@ def search_data():
             else:
                 if dataset:
                     response = conn.execute(f"""
-                        SELECT urls, doi, title, dataset, abstract, keywords
+                        SELECT urls, doi, title, abstract, keywords
                         FROM Paper p
                         LEFT JOIN PaperText as t
                         ON p.id = t.id
@@ -121,7 +121,7 @@ def search_data():
                     """, filter_list + [len(filter_list), f'%{search_term}%', dataset]).fetchall()
                 else:
                     response = conn.execute(f"""
-                        SELECT urls, doi, title, dataset, abstract, keywords
+                        SELECT urls, doi, title, abstract, keywords
                         FROM Paper p
                         LEFT JOIN PaperText as t
                         ON p.id = t.id                        
@@ -137,7 +137,7 @@ def search_data():
         
         # Convert response to JSON format.
         json_response = []
-        for urls, doi, dataset, title, abstract, keywords in response:
+        for urls, doi, title, abstract, keywords in response:
             json_entry = {
                 'urls': urls if urls else "https://doi.org/" + doi if doi else "arc.cs.wwu.edu",
                 'title': title,
