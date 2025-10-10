@@ -42,7 +42,7 @@ export default function About() {
           </div>
           <div className="max-w-3xl mx-auto mb-20 space-y-6 text-gray-600 leading-relaxed">
             <p className="text-lg text-center">
-              We are a dedicated team of student researchers working with the NEAT Lab at Western Washington University. We are devoted to developing technologies that benefit humanity for the greater good.
+              We are a dedicated team of student researchers working with the <b>NEAT Lab</b> at <a href="https://cs.wwu.edu" target="_blank"><b>Western Washington University.</b></a> We are devoted to developing technologies that benefit humanity for the greater good.
             </p>
             <p className="text-lg text-center">
               We started this project to help a broad range of people gain access to insightful knowledge and information regarding autsim research. The goal is to deliver
