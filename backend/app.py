@@ -42,14 +42,14 @@ def search_data():
             if (len(filter_list) == 0):
                 if dataset:
                     response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, abstract, keywords
+                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords 
                         FROM paper
                         WHERE (abstract LIKE ? OR title LIKE ?) AND dataset = ?
                         ORDER BY year desc
                     """, (f'%{search_term}%', f'%{search_term}%', dataset)).fetchall()
                 else:
                     response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, abstract, keywords
+                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords
                         FROM paper
                         WHERE abstract LIKE ? OR title LIKE ?
                         ORDER BY year desc
@@ -57,7 +57,7 @@ def search_data():
             else:
                 if dataset:
                     response = conn.execute(f"""
-                        SELECT urls, doi, title, abstract, keywords
+                        SELECT urls, doi, title, dataset, abstract, keywords
                         FROM Paper p
                         WHERE p.id IN (
                             SELECT paper_id
@@ -70,7 +70,7 @@ def search_data():
                     """, filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]).fetchall()
                 else:
                     response = conn.execute(f"""
-                        SELECT urls, doi, title, abstract, keywords
+                        SELECT urls, doi, title, dataset, abstract, keywords
                         FROM Paper p
                         WHERE p.id IN (
                             SELECT paper_id
@@ -87,7 +87,7 @@ def search_data():
             if (len(filter_list) == 0):
                 if dataset:
                     response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, abstract, keywords
+                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords
                         FROM paper as p
                         LEFT JOIN PaperText as t
                         ON p.id = t.id
@@ -96,7 +96,7 @@ def search_data():
                     """, (f'%{search_term}%', dataset)).fetchall()
                 else:
                     response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, abstract, keywords
+                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords
                         FROM paper as p
                         LEFT JOIN PaperText as t
                         ON p.id = t.id
@@ -106,7 +106,7 @@ def search_data():
             else:
                 if dataset:
                     response = conn.execute(f"""
-                        SELECT urls, doi, title, abstract, keywords
+                        SELECT urls, doi, title, dataset, abstract, keywords
                         FROM Paper p
                         LEFT JOIN PaperText as t
                         ON p.id = t.id
@@ -121,7 +121,7 @@ def search_data():
                     """, filter_list + [len(filter_list), f'%{search_term}%', dataset]).fetchall()
                 else:
                     response = conn.execute(f"""
-                        SELECT urls, doi, title, abstract, keywords
+                        SELECT urls, doi, title, dataset, abstract, keywords
                         FROM Paper p
                         LEFT JOIN PaperText as t
                         ON p.id = t.id                        
@@ -137,10 +137,11 @@ def search_data():
         
         # Convert response to JSON format.
         json_response = []
-        for urls, doi, title, abstract, keywords in response:
+        for urls, doi, title, dataset, abstract, keywords in response:
             json_entry = {
                 'urls': urls if urls else "https://doi.org/" + doi if doi else "arc.cs.wwu.edu",
                 'title': title,
+                'dataset': dataset,
                 'abstract': abstract,
                 'keywords': keywords,
             }
@@ -182,7 +183,9 @@ def get_year_distribution():
             if len(filter_list) == 0:
                 if dataset:
                     year_query = """
-                        SELECT year, COUNT(*) as count
+                        SELECT year, 
+                        SUM(CASE WHEN dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
+                        SUM(CASE WHEN dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count                        
                         FROM paper
                         WHERE (abstract LIKE ? OR title LIKE ?) AND year IS NOT NULL AND dataset = ?
                         GROUP BY year
@@ -191,7 +194,9 @@ def get_year_distribution():
                     year_params = [f'%{search_term}%', f'%{search_term}%', dataset]
                 else:
                     year_query = """
-                        SELECT year, COUNT(*) as count
+                        SELECT year, 
+                        SUM(CASE WHEN dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
+                        SUM(CASE WHEN dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count                        
                         FROM paper
                         WHERE (abstract LIKE ? OR title LIKE ?) AND year IS NOT NULL
                         GROUP BY year
@@ -201,7 +206,9 @@ def get_year_distribution():
             else:
                 if dataset:
                     year_query = f"""
-                        SELECT p.year, COUNT(*) as count
+                        SELECT year, 
+                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
+                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
                         FROM Paper p
                         WHERE p.id IN (
                             SELECT paper_id
@@ -216,7 +223,9 @@ def get_year_distribution():
                     year_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]
                 else:
                     year_query = f"""
-                        SELECT p.year, COUNT(*) as count
+                        SELECT year, 
+                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
+                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
                         FROM Paper p
                         WHERE p.id IN (
                             SELECT paper_id
@@ -233,7 +242,9 @@ def get_year_distribution():
             if len(filter_list) == 0:
                 if dataset:
                     year_query = """
-                        SELECT year, COUNT(*) as count
+                        SELECT year, 
+                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
+                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
                         FROM paper p
                         LEFT JOIN PaperText t
                         ON p.id = t.id
@@ -244,7 +255,9 @@ def get_year_distribution():
                     year_params = [f'%{search_term}%', dataset]
                 else:
                     year_query = """
-                        SELECT year, COUNT(*) as count
+                        SELECT year, 
+                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
+                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
                         FROM paper p
                         LEFT JOIN PaperText t
                         ON p.id = t.id
@@ -256,7 +269,9 @@ def get_year_distribution():
             else:
                 if dataset:
                     year_query = f"""
-                        SELECT p.year, COUNT(*) as count
+                        SELECT year, 
+                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
+                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
                         FROM Paper p
                         LEFT JOIN PaperText t
                         ON p.id = t.id
@@ -273,7 +288,9 @@ def get_year_distribution():
                     year_params = filter_list + [len(filter_list), f'%{search_term}%', dataset]
                 else:
                     year_query = f"""
-                        SELECT p.year, COUNT(*) as count
+                        SELECT year, 
+                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
+                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count                        
                         FROM Paper p
                         LEFT JOIN PaperText t
                         ON p.id = t.id                        
@@ -293,10 +310,11 @@ def get_year_distribution():
         year_distribution = conn.execute(year_query, year_params).fetchall()
         
         chart_data = []
-        for year, count in year_distribution:
+        for year, ieee_count, acm_count in year_distribution:
             chart_data.append({
                 'year': str(int(year)),
-                'count': count
+                'ieee_count': ieee_count,
+                'acm_count': acm_count
             })
         
         return jsonify({
@@ -670,11 +688,11 @@ def get_journal_distribution():
         })
     
 
-# TODO: Implement keyword count function.
 @app.route('/api/visualizations/keyworddistribution', methods=['GET'])
 def get_keyword_distribution():
     with sqlite3.connect(DB_PATH) as conn:
         search_term = request.args.get('q', '').lower()
+        search_type = request.args.get('searchtype', '').lower()
         dataset = request.args.get('dataset', '')
         filter_mapping = {
             'challenge': request.args.get('challenge', '').lower(),
@@ -696,41 +714,148 @@ def get_keyword_distribution():
         filter_list = [f"{key}_{value}" for key, value in filter_mapping.items() if value and value.strip()]
         placeholders = ','.join('?' * len(filter_list))
         
-        if len(filter_list) == 0:
-            if dataset:
-                keyword_query = """
-
-                """
-                keyword_params = [f'%{search_term}%', f'%{search_term}%', dataset]
+        if search_type == "t1":
+            if len(filter_list) == 0:
+                if dataset:
+                    keyword_query = """
+                        SELECT keywords
+                        FROM paper
+                        WHERE (abstract LIKE ? OR title LIKE ?) AND dataset = ? AND keywords IS NOT NULL
+                        ORDER BY year desc
+                    """
+                    keyword_params = [f'%{search_term}%', f'%{search_term}%', dataset]
+                else:
+                    keyword_query = """
+                        SELECT keywords
+                        FROM paper
+                        WHERE (abstract LIKE ? OR title LIKE ?) AND keywords IS NOT NULL
+                        ORDER BY year desc
+                    """
+                    keyword_params = [f'%{search_term}%', f'%{search_term}%']
             else:
-                keyword_query = """
-
-                """
-                keyword_params = [f'%{search_term}%', f'%{search_term}%']
+                if dataset:
+                    keyword_query = f"""
+                        SELECT keywords
+                        FROM Paper p
+                        WHERE p.id IN (
+                            SELECT paper_id
+                            FROM PaperCode
+                            WHERE code IN ({placeholders})
+                            GROUP BY paper_id
+                            HAVING COUNT(DISTINCT code) = ?
+                        ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.dataset = ? AND p.keywords IS NOT NULL
+                        ORDER BY year desc
+                    """
+                    keyword_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]
+                else:
+                    keyword_query = f"""
+                        SELECT keywords
+                        FROM Paper p
+                        WHERE p.id IN (
+                            SELECT paper_id
+                            FROM PaperCode
+                            WHERE code IN ({placeholders})
+                            GROUP BY paper_id
+                            HAVING COUNT(DISTINCT code) = ?
+                        ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.keywords IS NOT NULL
+                        ORDER BY year desc
+                    """
+                    keyword_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%']
         else:
-            if dataset:
-                keyword_query = f"""
-
-                """
-                keyword_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]
+            if len(filter_list) == 0:
+                if dataset:
+                    keyword_query = """
+                        SELECT keywords
+                        FROM paper p
+                        LEFT JOIN PaperText t
+                        ON p.id = t.id
+                        WHERE (t.text LIKE ?) AND dataset = ? AND keywords IS NOT NULL
+                        ORDER BY year desc
+                    """
+                    keyword_params = [f'%{search_term}%', dataset]
+                else:
+                    keyword_query = """
+                        SELECT keywords
+                        FROM paper p
+                        LEFT JOIN PaperText t
+                        ON p.id = t.id
+                        WHERE (t.text LIKE ?) AND keywords IS NOT NULL
+                        ORDER BY year desc
+                    """
+                    keyword_params = [f'%{search_term}%']
             else:
-                keyword_query = f"""
-
-                """
-                keyword_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%']
+                if dataset:
+                    keyword_query = f"""
+                        SELECT keywords
+                        FROM Paper p
+                        LEFT JOIN PaperText as t
+                        ON p.id = t.id
+                        WHERE p.id IN (
+                            SELECT paper_id
+                            FROM PaperCode
+                            WHERE code IN ({placeholders})
+                            GROUP BY paper_id
+                            HAVING COUNT(DISTINCT code) = ?
+                        ) AND (t.text LIKE ?) AND p.dataset = ? AND p.keywords IS NOT NULL
+                        ORDER BY year desc
+                    """
+                    keyword_params = filter_list + [len(filter_list), f'%{search_term}%', dataset]
+                else:
+                    keyword_query = f"""
+                        SELECT keywords
+                        FROM Paper p
+                        LEFT JOIN PaperText as t
+                        ON p.id = t.id
+                        WHERE p.id IN (
+                            SELECT paper_id
+                            FROM PaperCode
+                            WHERE code IN ({placeholders})
+                            GROUP BY paper_id
+                            HAVING COUNT(DISTINCT code) = ?
+                        ) AND (t.text LIKE ?) AND p.keywords IS NOT NULL
+                        ORDER BY year desc
+                    """
+                    keyword_params = filter_list + [len(filter_list), f'%{search_term}%']
         
         keyword_distribution = conn.execute(keyword_query, keyword_params).fetchall()
         
+        keyword_count = {}
+        for (keyword_string,) in keyword_distribution:
+            if not keyword_string:
+                continue
+            
+            keyword_list_split = []
+            if ';' in keyword_string:
+                keyword_list_split = keyword_string.split(';')
+            elif ',' in keyword_string:
+                keyword_list_split = keyword_string.split(',')
+            else:
+                keyword_list_split = [keyword_string]
+            
+            for keyword in keyword_list_split:
+                keyword = keyword.strip().lower()
+                if keyword:
+                    if keyword in keyword_count:
+                        keyword_count[keyword] += 1
+                    else:
+                        keyword_count[keyword] = 1
+        
+        # Sort by count (descending) and get top keywords
+        sorted_keywords = sorted(keyword_count.items(), key=lambda x: x[1], reverse=True)
+        
+        # Return top 12 keywords (or adjust limit as needed)
         chart_data = []
-        for keyword, count in keyword_distribution:
-            chart_data.append({
-                'journal': str(keyword),
-                'count': count
-            })
+        for keyword, count in sorted_keywords[:12]:
+            if keyword != "autism" and keyword != "autism spectrum disorder":
+                chart_data.append({
+                    'keyword': keyword,
+                    'count': count
+                })
+        
         return jsonify({
             'success': True,
             'data': chart_data
-        })    
+        })
 
 
 if __name__ == "__main__":

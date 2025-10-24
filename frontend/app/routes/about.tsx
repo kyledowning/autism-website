@@ -80,8 +80,8 @@ export default function About() {
                 As this is a relatively new project in the stages of development, we are open to any and all constructive feedback regarding your experience with this website.
                 Further, if you have any additional questions or comments regarding our project don't hesitate to reach out!
             </p>
-            <a href="mailto:downink4@wwu.edu?subject=Questions/Comments regarding arc.cs.wwu.edu">
-              <h1 className="text-center text-2xl rounded-xl shadow-sm bg-gray-200 hover:bg-gray-300 hover:shadow-lg mb-10 py-5 text-black transition-all duration-300 cursor-pointer">Contact</h1>
+            <a target="_blank" href="https://docs.google.com/forms/d/e/1FAIpQLSfwDea1_VSwGcG6XPIhYq53I7yKVRpKQPKejQwl3lXnUKyjQQ/viewform?usp=preview">
+              <h1 className="text-center text-2xl rounded-xl shadow-sm bg-gray-200 hover:bg-gray-300 hover:shadow-lg mb-10 py-5 text-black transition-all duration-300 cursor-pointer">Feedback Form</h1>
             </a>
           </div>
       </div>

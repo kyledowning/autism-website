@@ -1,5 +1,6 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
+import { Footer } from "~/footer/footer";
 import { Nav } from "../nav/nav"
 
 
@@ -15,6 +16,7 @@ export default function Home() {
     <>
       <Nav />
       <Welcome />
+      <Footer />
     </>
   );
 }
