@@ -23,8 +23,8 @@ function YearChart({ filters }: { filters: Record<string, any> }) {
           level: filters.selectedLevel|| '',
           race: filters.selectedRace|| '',
           dataset: filters.selectedDataset|| ''
-        });        const response = await fetch(`http://127.0.0.1:5055/api/visualizations/yeardistribution?${queryParams}`);
-        console.log(`http://127.0.0.1:5055/api/visualizations/yeardistribution?${queryParams}`);
+        });        const response = await fetch(`/api/visualizations/yeardistribution?${queryParams}`);
+        console.log(`/api/visualizations/yeardistribution?${queryParams}`);
         const data = await response.json();
         if (data.success) {
           setChartData(data.data || []);

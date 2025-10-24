@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArticleBox } from '~/articleBox/articleBox';
 import { ChartContainer } from '~/charts/ChartContainer';
-import  FilterPanel from '~/filters/filterPanel'
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Treemap, Pie, Cell, Legend } from 'recharts';
+import  FilterPanel from '~/filters/FilterPanel'
 
 export default function Articles() {
 
@@ -72,7 +71,7 @@ export default function Articles() {
     if (search || selectedAge || selectedLanguage || selectedParticipantNumber || selectedTargetUser || selectedTechnology || selectedGender || selectedChallenge || selectedProblem || selectedDataset || selectedLevel || selectedRace || selectedSearchType) {
       setLoading(true);
       setVisibleCount(10); // Reset visible count when filters change
-      fetch(`http://127.0.0.1:5055/api/data?` +
+      fetch(`/api/data?` +
       `q=${encodeURIComponent(search)}&` +
       `searchtype=${encodeURIComponent(selectedSearchType)}&` +
       `age=${encodeURIComponent(selectedAge)}&` +

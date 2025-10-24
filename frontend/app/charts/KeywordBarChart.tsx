@@ -23,7 +23,7 @@ function KeywordBarChart({ filters }: { filters: Record<string, any> }) {
           level: filters.selectedLevel|| '',
           race: filters.selectedRace|| '',
           dataset: filters.selectedDataset|| ''
-        });        const response = await fetch(`http://127.0.0.1:5055/api/visualizations/keyworddistribution?${queryParams}`);
+        });        const response = await fetch(`/api/visualizations/keyworddistribution?${queryParams}`);
         const data = await response.json();
         if (data.success) {
           const formatted = data.data.map(item => ({
