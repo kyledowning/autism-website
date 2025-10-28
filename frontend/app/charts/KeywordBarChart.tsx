@@ -23,7 +23,8 @@ function KeywordBarChart({ filters }: { filters: Record<string, any> }) {
           level: filters.selectedLevel|| '',
           race: filters.selectedRace|| '',
           dataset: filters.selectedDataset|| ''
-        });        const response = await fetch(`/api/visualizations/keyworddistribution?${queryParams}`);
+        });        
+        const response = await fetch(`/api/visualizations/keyworddistribution?${queryParams}`);
         const data = await response.json();
         if (data.success) {
           const formatted = data.data.map(item => ({
@@ -41,7 +42,7 @@ function KeywordBarChart({ filters }: { filters: Record<string, any> }) {
   }, [filters]);
 
   return (
-        <div className="bg-gray-750 p-4 rounded-lg shadow-md border border-gray-600">
+        <div className="bg-gray-750 p-4 m-2 rounded-lg shadow-md border border-gray-600">
           <h2 className="text-lg font-semibold mb-4 text-center text-gray-100">Top Keywords</h2>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart

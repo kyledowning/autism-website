@@ -3,861 +3,314 @@ from flask_cors import CORS
 import sqlite3
 import os
 
-# Allow Cross-Origin
+# Initiate the application
 app = Flask(__name__)
 CORS(app)
-
-# Database filepath
 DB_PATH = os.getenv('AUTISM_DB_PATH', './autism_research_updated.db')
 
-# Return JSON format database contents based on search and filter options.
+
+"""
+======================================================================
+- Python Flask API for ARC
+- Updated 10/27/25
+======================================================================
+Helpers:
+  get_filter_params():
+    - Extract query parameters
+    - Generate filter list for DB queires
+    - Generate placeholder list for each filter
+
+  get_search_params():
+    - Extract search term, type, and dataset type from request
+
+  build_where_clause():
+    - Takes nessacery precursors (filter_list, search_type, search_term)
+    - Builds WHERE clause for query based on active filters and options
+=====================================================================
+API Endpoints and Handlers:
+
+GET Endpoints:
+  URL: /api/data , Function: search_data()
+    - Returns the following:
+      - URL: Resolves URL based on doi if NULL
+      - Title: Title of the paper
+      - Dataset: IEEE Xplore OR ACM Digital Library
+      - Abstract: The abstract of the paper
+      - Keywords: Keyword list associated with the paper
+
+  URL: /api/visualization/yeardistribution, Function: get_year_distribution()
+    - Return data in the format [{year: int, ieee_count: int, acm_count: int}]
+    - This endpoint is used to display the publications by year line graph
+
+  URL: /api/visualization/technologydistribution, Function: get_technology_distribution()
+    - Return data in the format [{technology: str, count: int}]
+    - This endpoint is used to display the top technology pie chart
+
+  URL: /api/visualization/journaldistribution, Function: get_journal_distribution()
+    - Return data in the format [{journal: str, count: int}]
+    - This endpoint is used to display the journal pie chart (not used currently!)
+
+  URL: /api/visualization/keyworddistribution, Function: get_keyword_distribution()
+    - Return the count of the top 12 keywords EXCLUDING commonalities (view function)
+    - Return data in the format [{keyword: str, count: int}]
+    - This endpoint is used to display the horizontal bar chart of top keywords
+
+  URL: /api/visualization/geodata, Function: get_geodata()
+    - Extract locations attribute from each DB entry, create atomic count for each country
+        - Location data based on institution of authors
+    - Return data in the format [{country: str, count: int}]
+    - This endpoint is used to display publication map
+
+=====================================================================
+"""
+
+
+# =====================================================================
+# HELPER FUNCTIONS
+# =====================================================================
+
+def get_filter_params():
+    filter_mapping = {
+        'challenge': request.args.get('challenge', '').lower(),
+        'targetuser': request.args.get('targetuser', '').lower(),
+        'genderincludes': request.args.get('genderincludes', '').lower(),
+        'race': request.args.get('race', '').lower(),
+        'problem': request.args.get('problem', '').lower(),
+        'gender': request.args.get('gender', '').lower(),
+        'language': request.args.get('language', '').lower(),
+        'age': request.args.get('age', '').lower(),
+        'level': request.args.get('level', '').lower(),
+        'participantnumber': request.args.get('participantnumber', '').lower(),
+        'using': request.args.get('using', '').lower(),
+        'group': request.args.get('group', '').lower(),
+        'technology': request.args.get('technology', ''),
+    }
+    filter_list = [f"{k}_{v}" for k, v in filter_mapping.items() if v and v.strip()]
+    placeholders = ','.join('?' * len(filter_list))
+    return filter_list, placeholders
+
+def get_search_params():
+    return {
+        'term': request.args.get('q', '').lower(),
+        'type': request.args.get('searchtype', '').lower(),
+        'dataset': request.args.get('dataset', '')
+    }
+
+def build_where_clause(search_params, filter_list, placeholders, text_search=False, table_alias='p'):
+    search_term = search_params['term']
+    search_type = search_params['type']
+    dataset = search_params['dataset']
+    
+    conditions = []
+    params = []
+    
+    # Add filter conditions
+    if filter_list:
+        filter_subquery = f"""
+            {table_alias}.id IN (
+                SELECT paper_id FROM PaperCode
+                WHERE code IN ({placeholders})
+                GROUP BY paper_id
+                HAVING COUNT(DISTINCT code) = ?
+            )
+        """
+        conditions.append(filter_subquery)
+        params.extend(filter_list + [len(filter_list)])
+    
+    # Add search conditions
+    if search_type == "t1":
+        conditions.append(f"({table_alias}.abstract LIKE ? OR {table_alias}.title LIKE ?)")
+        params.extend([f'%{search_term}%', f'%{search_term}%'])
+    else:  # t2: full text
+        conditions.append("(t.text LIKE ?)")
+        params.append(f'%{search_term}%')
+    
+    # Add dataset condition
+    if dataset:
+        conditions.append(f"{table_alias}.dataset = ?")
+        params.append(dataset)
+    
+    return " AND ".join(conditions) if conditions else "1=1", params
+
+
+# =====================================================================
+# API ENDPOINTS
+# =====================================================================
+
 @app.route('/api/data', methods=['GET'])
 def search_data():
     with sqlite3.connect(DB_PATH) as conn:
-        # Extract query parameters convert for use in SQL query.
-        search_term = request.args.get('q', '').lower()
-        search_type = request.args.get('searchtype', '').lower()
-        dataset = request.args.get('dataset', '')
-        filter_mapping = {
-            'challenge': request.args.get('challenge', '').lower(),
-            'targetuser': request.args.get('targetuser', '').lower(),
-            'genderincludes': request.args.get('genderincludes', '').lower(),
-            'race': request.args.get('race', '').lower(),
-            'problem': request.args.get('problem', '').lower(),
-            'gender': request.args.get('gender', '').lower(),
-            'language': request.args.get('language', '').lower(),
-            'age': request.args.get('age', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'participantnumber': request.args.get('participantnumber', '').lower(),
-            'using': request.args.get('using', '').lower(),
-            'group': request.args.get('group', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'technology': request.args.get('technology', ''),
-        }
-        filter_list = [f"{key}_{value}" for key, value in filter_mapping.items() if value and value.strip()]
-        placeholders = ','.join('?' * len(filter_list))
-
-        # Create and execute SQL query based on users filter and search options.
-        if search_type == "t1":
-            if (len(filter_list) == 0):
-                if dataset:
-                    response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords 
-                        FROM paper
-                        WHERE (abstract LIKE ? OR title LIKE ?) AND dataset = ?
-                        ORDER BY year desc
-                    """, (f'%{search_term}%', f'%{search_term}%', dataset)).fetchall()
-                else:
-                    response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords
-                        FROM paper
-                        WHERE abstract LIKE ? OR title LIKE ?
-                        ORDER BY year desc
-                    """, (f'%{search_term}%', f'%{search_term}%')).fetchall()
-            else:
-                if dataset:
-                    response = conn.execute(f"""
-                        SELECT urls, doi, title, dataset, abstract, keywords
-                        FROM Paper p
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.dataset = ?
-                        ORDER BY year desc
-                    """, filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]).fetchall()
-                else:
-                    response = conn.execute(f"""
-                        SELECT urls, doi, title, dataset, abstract, keywords
-                        FROM Paper p
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (p.abstract LIKE ? OR p.title LIKE ?)
-                        ORDER BY year desc
-                    """, filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%']).fetchall()
+        search_params = get_search_params()
+        filter_list, placeholders = get_filter_params()
         
-        # t2: FULL TEXT BASED
+        # Build query based on search type
+        if search_params['type'] == "t1":
+            base_query = "SELECT DISTINCT urls, doi, title, dataset, abstract, keywords FROM paper p"
+            join_clause = ""
         else:
-            if (len(filter_list) == 0):
-                if dataset:
-                    response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords
-                        FROM paper as p
-                        LEFT JOIN PaperText as t
-                        ON p.id = t.id
-                        WHERE (t.text LIKE ?) AND dataset = ?
-                        ORDER BY year desc
-                    """, (f'%{search_term}%', dataset)).fetchall()
-                else:
-                    response = conn.execute("""
-                        SELECT DISTINCT urls, doi, title, dataset, abstract, keywords
-                        FROM paper as p
-                        LEFT JOIN PaperText as t
-                        ON p.id = t.id
-                        WHERE (t.text LIKE ?)
-                        ORDER BY year desc
-                    """, (f'%{search_term}%',)).fetchall()
-            else:
-                if dataset:
-                    response = conn.execute(f"""
-                        SELECT urls, doi, title, dataset, abstract, keywords
-                        FROM Paper p
-                        LEFT JOIN PaperText as t
-                        ON p.id = t.id
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (t.text LIKE ?) AND p.dataset = ?
-                        ORDER BY year desc
-                    """, filter_list + [len(filter_list), f'%{search_term}%', dataset]).fetchall()
-                else:
-                    response = conn.execute(f"""
-                        SELECT urls, doi, title, dataset, abstract, keywords
-                        FROM Paper p
-                        LEFT JOIN PaperText as t
-                        ON p.id = t.id                        
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (t.text LIKE ?)
-                        ORDER BY year desc
-                    """, filter_list + [len(filter_list), f'%{search_term}%']).fetchall()
+            base_query = "SELECT DISTINCT urls, doi, title, dataset, abstract, keywords FROM paper p"
+            join_clause = "LEFT JOIN PaperText t ON p.id = t.id"
         
-        # Convert response to JSON format.
-        json_response = []
-        for urls, doi, title, dataset, abstract, keywords in response:
-            json_entry = {
-                'urls': urls if urls else "https://doi.org/" + doi if doi else "arc.cs.wwu.edu",
-                'title': title,
-                'dataset': dataset,
-                'abstract': abstract,
-                'keywords': keywords,
-            }
-            json_response.append(json_entry)
+        where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
+                                                   search_params['type'] == "t2", 'p')
         
-        return jsonify({
-            'success': True,
-            'data': json_response,
-            'count': len(json_response)
-        })
+        query = f"{base_query} {join_clause} WHERE {where_clause} ORDER BY year DESC"
+        response = conn.execute(query, params).fetchall()
+        
+        # Format response
+        json_response = [{
+            'urls': urls if urls else f"https://doi.org/{doi}" if doi else "arc.cs.wwu.edu",
+            'title': title,
+            'dataset': dataset,
+            'abstract': abstract,
+            'keywords': keywords,
+        } for urls, doi, title, dataset, abstract, keywords in response]
+        
+        return jsonify({'success': True, 'data': json_response, 'count': len(json_response)})
 
 @app.route('/api/visualizations/yeardistribution', methods=['GET'])
 def get_year_distribution():
     with sqlite3.connect(DB_PATH) as conn:
-        search_term = request.args.get('q', '').lower()
-        search_type = request.args.get('searchtype', '').lower()
-        dataset = request.args.get('dataset', '')
-        filter_mapping = {
-            'challenge': request.args.get('challenge', '').lower(),
-            'targetuser': request.args.get('targetuser', '').lower(),
-            'genderincludes': request.args.get('genderincludes', '').lower(),
-            'race': request.args.get('race', '').lower(),
-            'problem': request.args.get('problem', '').lower(),
-            'gender': request.args.get('gender', '').lower(),
-            'language': request.args.get('language', '').lower(),
-            'age': request.args.get('age', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'participantnumber': request.args.get('participantnumber', '').lower(),
-            'using': request.args.get('using', '').lower(),
-            'group': request.args.get('group', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'technology': request.args.get('technology', ''),
-        }
-
-        filter_list = [f"{key}_{value}" for key, value in filter_mapping.items() if value and value.strip()]
-        placeholders = ','.join('?' * len(filter_list))
-
-        if search_type == "t1":
-            if len(filter_list) == 0:
-                if dataset:
-                    year_query = """
-                        SELECT year, 
-                        SUM(CASE WHEN dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
-                        SUM(CASE WHEN dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count                        
-                        FROM paper
-                        WHERE (abstract LIKE ? OR title LIKE ?) AND year IS NOT NULL AND dataset = ?
-                        GROUP BY year
-                        ORDER BY year ASC
-                    """
-                    year_params = [f'%{search_term}%', f'%{search_term}%', dataset]
-                else:
-                    year_query = """
-                        SELECT year, 
-                        SUM(CASE WHEN dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
-                        SUM(CASE WHEN dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count                        
-                        FROM paper
-                        WHERE (abstract LIKE ? OR title LIKE ?) AND year IS NOT NULL
-                        GROUP BY year
-                        ORDER BY year ASC
-                    """
-                    year_params = [f'%{search_term}%', f'%{search_term}%']
-            else:
-                if dataset:
-                    year_query = f"""
-                        SELECT year, 
-                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
-                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
-                        FROM Paper p
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.year IS NOT NULL AND p.dataset = ?
-                        GROUP BY p.year
-                        ORDER BY p.year ASC
-                    """
-                    year_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]
-                else:
-                    year_query = f"""
-                        SELECT year, 
-                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
-                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
-                        FROM Paper p
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.year IS NOT NULL
-                        GROUP BY p.year
-                        ORDER BY p.year ASC
-                    """
-                    year_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%']        
-        else:
-            if len(filter_list) == 0:
-                if dataset:
-                    year_query = """
-                        SELECT year, 
-                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
-                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
-                        FROM paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id
-                        WHERE (t.text LIKE ?) AND p.year IS NOT NULL AND p.dataset = ?
-                        GROUP BY year
-                        ORDER BY year ASC
-                    """
-                    year_params = [f'%{search_term}%', dataset]
-                else:
-                    year_query = """
-                        SELECT year, 
-                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
-                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
-                        FROM paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id
-                        WHERE (t.text LIKE ?) AND p.year IS NOT NULL
-                        GROUP BY year
-                        ORDER BY year ASC
-                    """
-                    year_params = [f'%{search_term}%',]
-            else:
-                if dataset:
-                    year_query = f"""
-                        SELECT year, 
-                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
-                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
-                        FROM Paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (t.text LIKE ?) AND p.year IS NOT NULL AND p.dataset = ?
-                        GROUP BY p.year
-                        ORDER BY p.year ASC
-                    """
-                    year_params = filter_list + [len(filter_list), f'%{search_term}%', dataset]
-                else:
-                    year_query = f"""
-                        SELECT year, 
-                        SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
-                        SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count                        
-                        FROM Paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id                        
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (t.text LIKE ?) AND p.year IS NOT NULL
-                        GROUP BY p.year
-                        ORDER BY p.year ASC
-                    """
-                    year_params = filter_list + [len(filter_list), f'%{search_term}%']
-    
+        search_params = get_search_params()
+        filter_list, placeholders = get_filter_params()
         
-        year_distribution = conn.execute(year_query, year_params).fetchall()
+        # Build query
+        select_clause = """
+            SELECT year,
+            SUM(CASE WHEN p.dataset = 'IEEE Xplore' THEN 1 ELSE 0 END) AS ieee_count,
+            SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
+            FROM paper p
+        """
+        join_clause = "" if search_params['type'] == "t1" else "LEFT JOIN PaperText t ON p.id = t.id"
+        where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
+                                                   search_params['type'] == "t2", 'p')
         
-        chart_data = []
-        for year, ieee_count, acm_count in year_distribution:
-            chart_data.append({
-                'year': str(int(year)),
-                'ieee_count': ieee_count,
-                'acm_count': acm_count
-            })
+        query = f"{select_clause} {join_clause} WHERE {where_clause} AND p.year IS NOT NULL GROUP BY year ORDER BY year ASC"
+        results = conn.execute(query, params).fetchall()
         
-        return jsonify({
-            'success': True,
-            'data': chart_data
-        })
-    
+        chart_data = [{'year': str(int(year)), 'ieee_count': ieee, 'acm_count': acm} 
+                      for year, ieee, acm in results]
+        
+        return jsonify({'success': True, 'data': chart_data})
 
 @app.route('/api/visualizations/technologydistribution', methods=['GET'])
 def get_technology_distribution():
     with sqlite3.connect(DB_PATH) as conn:
-        search_term = request.args.get('q', '').lower()
-        search_type = request.args.get('searchtype', '').lower()
-        dataset = request.args.get('dataset', '')
-        filter_mapping = {
-            'challenge': request.args.get('challenge', '').lower(),
-            'targetuser': request.args.get('targetuser', '').lower(),
-            'genderincludes': request.args.get('genderincludes', '').lower(),
-            'race': request.args.get('race', '').lower(),
-            'problem': request.args.get('problem', '').lower(),
-            'gender': request.args.get('gender', '').lower(),
-            'language': request.args.get('language', '').lower(),
-            'age': request.args.get('age', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'participantnumber': request.args.get('participantnumber', '').lower(),
-            'using': request.args.get('using', '').lower(),
-            'group': request.args.get('group', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'technology': request.args.get('technology', ''),
-        }
-        filter_list = [f"{key}_{value}" for key, value in filter_mapping.items() if value and value.strip()]
-        placeholders = ','.join('?' * len(filter_list))
+        search_params = get_search_params()
+        filter_list, placeholders = get_filter_params()
         
-        if search_type == "t1":
-            if len(filter_list) == 0:
-                if dataset:
-                    tech_query = """
-                        SELECT
-                            c.code,
-                            COUNT(pc.paper_id) as paper_count
-                        FROM main.Code c
-                                LEFT JOIN main.PaperCode as pc ON c.code = pc.code
-                                WHERE pc.paper_id in (
-                                    SELECT id
-                                    FROM Paper p
-                                    WHERE (p.abstract LIKE ? OR p.title LIKE ?) AND p.dataset = ?
-                                    ) AND c.theme = 'technology'
-                        GROUP BY c.code, c.theme
-                        ORDER BY paper_count DESC
-                        LIMIT 8;
-                    """
-                    tech_params = [f'%{search_term}%', f'%{search_term}%', dataset]
-                else:
-                    tech_query = """
-                        SELECT
-                            c.code,
-                            COUNT(pc.paper_id) as paper_count
-                        FROM main.Code c
-                                LEFT JOIN main.PaperCode as pc ON c.code = pc.code
-                                WHERE pc.paper_id in (
-                                    SELECT id
-                                    FROM Paper p
-                                    WHERE p.abstract LIKE ? OR p.title LIKE ?
-                                    ) AND c.theme = 'technology'
-                        GROUP BY c.code, c.theme
-                        ORDER BY paper_count DESC
-                        LIMIT 8;
-                    """
-                    tech_params = [f'%{search_term}%', f'%{search_term}%']
-
-            else:
-                if dataset:
-                    tech_query = f"""
-                        SELECT
-                            c.code,
-                            COUNT(pc.paper_id) as paper_count
-                        FROM main.Code c
-                                LEFT JOIN main.PaperCode as pc ON c.code = pc.code
-                                WHERE pc.paper_id in (
-                                    SELECT id
-                                    FROM Paper p
-                                    WHERE p.id IN (
-                                        SELECT paper_id
-                                        FROM PaperCode
-                                        WHERE code IN ({placeholders})
-                                        GROUP BY paper_id
-                                        HAVING COUNT(DISTINCT code) = ?
-                                    ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.dataset = ?
-                                    ) AND c.theme = 'technology'
-                        GROUP BY c.code, c.theme
-                        ORDER BY paper_count DESC
-                        LIMIT 8;
-                    """
-                    tech_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]
-                else:
-                    tech_query = f"""
-                        SELECT
-                            c.code,
-                            COUNT(pc.paper_id) as paper_count
-                        FROM main.Code c
-                                LEFT JOIN main.PaperCode as pc ON c.code = pc.code
-                                WHERE pc.paper_id in (
-                                    SELECT id
-                                    FROM Paper p
-                                    WHERE p.id IN (
-                                        SELECT paper_id
-                                        FROM PaperCode
-                                        WHERE code IN ({placeholders})
-                                        GROUP BY paper_id
-                                        HAVING COUNT(DISTINCT code) = ?
-                                    ) AND (p.abstract LIKE ? OR p.title LIKE ?)
-                                    ) AND c.theme = 'technology'
-                        GROUP BY c.code, c.theme
-                        ORDER BY paper_count DESC
-                        LIMIT 8;
-                    """
-                    tech_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%']
+        # Build subquery for papers
+        if search_params['type'] == "t1":
+            paper_subquery = "SELECT id FROM Paper p"
+            join_clause = ""
         else:
-            if len(filter_list) == 0:
-                if dataset:
-                    tech_query = """
-                        SELECT
-                            c.code,
-                            COUNT(pc.paper_id) as paper_count
-                        FROM main.Code c
-                                LEFT JOIN main.PaperCode as pc ON c.code = pc.code
-                                WHERE pc.paper_id in (
-                                    SELECT p.id
-                                    FROM Paper p
-                                    LEFT JOIN PaperText as t
-                                    ON p.id = t.id
-                                    WHERE (t.text LIKE ?) AND p.dataset = ?
-                                    ) AND c.theme = 'technology'
-                        GROUP BY c.code, c.theme
-                        ORDER BY paper_count DESC
-                        LIMIT 8;
-                    """
-                    tech_params = [f'%{search_term}%', dataset]
-                else:
-                    tech_query = """
-                        SELECT
-                            c.code,
-                            COUNT(pc.paper_id) as paper_count
-                        FROM main.Code c
-                                LEFT JOIN main.PaperCode as pc ON c.code = pc.code
-                                WHERE pc.paper_id in (
-                                    SELECT p.id
-                                    FROM Paper p
-                                    LEFT JOIN PaperText as t
-                                    ON p.id = t.id
-                                    WHERE t.text LIKE ?
-                                    ) AND c.theme = 'technology'
-                        GROUP BY c.code, c.theme
-                        ORDER BY paper_count DESC
-                        LIMIT 8;
-                    """
-                    tech_params = [f'%{search_term}%']
-            else:
-                if dataset:
-                    tech_query = f"""
-                        SELECT
-                            c.code,
-                            COUNT(pc.paper_id) as paper_count
-                        FROM main.Code c
-                                LEFT JOIN main.PaperCode as pc ON c.code = pc.code
-                                WHERE pc.paper_id in (
-                                    SELECT p.id
-                                    FROM Paper p
-                                    LEFT JOIN PaperText t
-                                    ON p.id = t.id
-                                    WHERE p.id IN (
-                                        SELECT paper_id
-                                        FROM PaperCode
-                                        WHERE code IN ({placeholders})
-                                        GROUP BY paper_id
-                                        HAVING COUNT(DISTINCT code) = ?
-                                    ) AND (t.text LIKE ?) AND p.dataset = ?
-                                    ) AND c.theme = 'technology'
-                        GROUP BY c.code, c.theme
-                        ORDER BY paper_count DESC
-                        LIMIT 8;
-                    """
-                    tech_params = filter_list + [len(filter_list), f'%{search_term}%', dataset]
-                else:
-                    tech_query = f"""
-                        SELECT
-                            c.code,
-                            COUNT(pc.paper_id) as paper_count
-                        FROM main.Code c
-                                LEFT JOIN main.PaperCode as pc ON c.code = pc.code
-                                WHERE pc.paper_id in (
-                                    SELECT p.id
-                                    FROM Paper p
-                                    LEFT JOIN PaperText t
-                                    ON p.id = t.id
-                                    WHERE p.id IN (
-                                        SELECT paper_id
-                                        FROM PaperCode
-                                        WHERE code IN ({placeholders})
-                                        GROUP BY paper_id
-                                        HAVING COUNT(DISTINCT code) = ?
-                                    ) AND (t.text LIKE ?)
-                                    ) AND c.theme = 'technology'
-                        GROUP BY c.code, c.theme
-                        ORDER BY paper_count DESC
-                        LIMIT 8;
-                    """
-                    tech_params = filter_list + [len(filter_list), f'%{search_term}%']
-
-        tech_distribution = conn.execute(tech_query, tech_params).fetchall()        
-        tech_data = []
-        for code, paper_count in tech_distribution:
-            tech_data.append({
-                'technology': str(code.split('_')[1]),
-                'count': paper_count
-            })
-        return jsonify({
-            'success': True,
-            'data': tech_data
-        })
+            paper_subquery = "SELECT p.id FROM Paper p LEFT JOIN PaperText t ON p.id = t.id"
+            join_clause = ""
+        
+        where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
+                                                   search_params['type'] == "t2", 'p')
+        
+        query = f"""
+            SELECT c.code, COUNT(pc.paper_id) as paper_count
+            FROM main.Code c
+            LEFT JOIN main.PaperCode pc ON c.code = pc.code
+            WHERE pc.paper_id IN ({paper_subquery} WHERE {where_clause})
+            AND c.theme = 'technology'
+            GROUP BY c.code, c.theme
+            ORDER BY paper_count DESC
+            LIMIT 8
+        """
+        
+        results = conn.execute(query, params).fetchall()
+        tech_data = [{'technology': code.split('_')[1], 'count': count} for code, count in results]
+        
+        return jsonify({'success': True, 'data': tech_data})
 
 @app.route('/api/visualizations/journaldistribution', methods=['GET'])
 def get_journal_distribution():
     with sqlite3.connect(DB_PATH) as conn:
-        search_term = request.args.get('q', '').lower()
-        search_type = request.args.get('searchtype', '').lower()
-        dataset = request.args.get('dataset', '')
-        filter_mapping = {
-            'challenge': request.args.get('challenge', '').lower(),
-            'targetuser': request.args.get('targetuser', '').lower(),
-            'genderincludes': request.args.get('genderincludes', '').lower(),
-            'race': request.args.get('race', '').lower(),
-            'problem': request.args.get('problem', '').lower(),
-            'gender': request.args.get('gender', '').lower(),
-            'language': request.args.get('language', '').lower(),
-            'age': request.args.get('age', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'participantnumber': request.args.get('participantnumber', '').lower(),
-            'using': request.args.get('using', '').lower(),
-            'group': request.args.get('group', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'technology': request.args.get('technology', ''),
-        }
-
-        filter_list = [f"{key}_{value}" for key, value in filter_mapping.items() if value and value.strip()]
-        placeholders = ','.join('?' * len(filter_list))
+        search_params = get_search_params()
+        filter_list, placeholders = get_filter_params()
         
-        if search_type == "t1":
-            if len(filter_list) == 0:
-                if dataset:
-                    year_query = """
-                        SELECT dataset, COUNT(*) as count
-                        FROM paper
-                        WHERE (abstract LIKE ? OR title LIKE ?) AND year IS NOT NULL AND dataset = ?
-                        GROUP BY dataset
-                        ORDER BY year ASC
-                    """
-                    year_params = [f'%{search_term}%', f'%{search_term}%', dataset]
-                else:
-                    year_query = """
-                        SELECT dataset, COUNT(*) as count
-                        FROM paper
-                        WHERE (abstract LIKE ? OR title LIKE ?) AND year IS NOT NULL
-                        GROUP BY dataset
-                        ORDER BY year ASC
-                    """
-                    year_params = [f'%{search_term}%', f'%{search_term}%']
-            else:
-                if dataset:
-                    year_query = f"""
-                        SELECT p.dataset, COUNT(*) as count
-                        FROM Paper p
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.year IS NOT NULL AND p.dataset = ?
-                        GROUP BY p.dataset
-                        ORDER BY p.year ASC
-                    """
-                    year_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]
-                else:
-                    year_query = f"""
-                        SELECT p.dataset, COUNT(*) as count
-                        FROM Paper p
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.year IS NOT NULL
-                        GROUP BY p.dataset
-                        ORDER BY p.year ASC
-                    """
-                    year_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%']
-        else:
-            if len(filter_list) == 0:
-                if dataset:
-                    year_query = """
-                        SELECT dataset, COUNT(*) as count
-                        FROM paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id
-                        WHERE (t.text LIKE ?) AND year IS NOT NULL AND dataset = ?
-                        GROUP BY dataset
-                        ORDER BY year ASC
-                    """
-                    year_params = [f'%{search_term}%', dataset]
-                else:
-                    year_query = """
-                        SELECT dataset, COUNT(*) as count
-                        FROM paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id
-                        WHERE (t.text LIKE ?) AND year IS NOT NULL
-                        GROUP BY dataset
-                        ORDER BY year ASC
-                    """
-                    year_params = [f'%{search_term}%']
-            else:
-                if dataset:
-                    year_query = f"""
-                        SELECT p.dataset, COUNT(*) as count
-                        FROM Paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (t.text LIKE ?) AND p.year IS NOT NULL AND p.dataset = ?
-                        GROUP BY p.dataset
-                        ORDER BY p.year ASC
-                    """
-                    year_params = filter_list + [len(filter_list), f'%{search_term}%', dataset]
-                else:
-                    year_query = f"""
-                        SELECT p.dataset, COUNT(*) as count
-                        FROM Paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (t.text LIKE ?) AND p.year IS NOT NULL
-                        GROUP BY p.dataset
-                        ORDER BY p.year ASC
-                    """
-                    year_params = filter_list + [len(filter_list), f'%{search_term}%']
+        select_clause = "SELECT dataset, COUNT(*) as count FROM paper p"
+        join_clause = "" if search_params['type'] == "t1" else "LEFT JOIN PaperText t ON p.id = t.id"
+        where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
+                                                   search_params['type'] == "t2", 'p')
         
-        year_distribution = conn.execute(year_query, year_params).fetchall()
+        query = f"{select_clause} {join_clause} WHERE {where_clause} AND year IS NOT NULL GROUP BY dataset ORDER BY year ASC"
+        results = conn.execute(query, params).fetchall()
         
-        chart_data = []
-        for journal, count in year_distribution:
-            chart_data.append({
-                'journal': str(journal),
-                'count': count
-            })
-        
-        return jsonify({
-            'success': True,
-            'data': chart_data
-        })
-    
+        chart_data = [{'journal': str(journal), 'count': count} for journal, count in results]
+        return jsonify({'success': True, 'data': chart_data})
 
 @app.route('/api/visualizations/keyworddistribution', methods=['GET'])
 def get_keyword_distribution():
     with sqlite3.connect(DB_PATH) as conn:
-        search_term = request.args.get('q', '').lower()
-        search_type = request.args.get('searchtype', '').lower()
-        dataset = request.args.get('dataset', '')
-        filter_mapping = {
-            'challenge': request.args.get('challenge', '').lower(),
-            'targetuser': request.args.get('targetuser', '').lower(),
-            'genderincludes': request.args.get('genderincludes', '').lower(),
-            'race': request.args.get('race', '').lower(),
-            'problem': request.args.get('problem', '').lower(),
-            'gender': request.args.get('gender', '').lower(),
-            'language': request.args.get('language', '').lower(),
-            'age': request.args.get('age', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'participantnumber': request.args.get('participantnumber', '').lower(),
-            'using': request.args.get('using', '').lower(),
-            'group': request.args.get('group', '').lower(),
-            'level': request.args.get('level', '').lower(),
-            'technology': request.args.get('technology', ''),
-        }
-
-        filter_list = [f"{key}_{value}" for key, value in filter_mapping.items() if value and value.strip()]
-        placeholders = ','.join('?' * len(filter_list))
+        search_params = get_search_params()
+        filter_list, placeholders = get_filter_params()
         
-        if search_type == "t1":
-            if len(filter_list) == 0:
-                if dataset:
-                    keyword_query = """
-                        SELECT keywords
-                        FROM paper
-                        WHERE (abstract LIKE ? OR title LIKE ?) AND dataset = ? AND keywords IS NOT NULL
-                        ORDER BY year desc
-                    """
-                    keyword_params = [f'%{search_term}%', f'%{search_term}%', dataset]
-                else:
-                    keyword_query = """
-                        SELECT keywords
-                        FROM paper
-                        WHERE (abstract LIKE ? OR title LIKE ?) AND keywords IS NOT NULL
-                        ORDER BY year desc
-                    """
-                    keyword_params = [f'%{search_term}%', f'%{search_term}%']
-            else:
-                if dataset:
-                    keyword_query = f"""
-                        SELECT keywords
-                        FROM Paper p
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.dataset = ? AND p.keywords IS NOT NULL
-                        ORDER BY year desc
-                    """
-                    keyword_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%', dataset]
-                else:
-                    keyword_query = f"""
-                        SELECT keywords
-                        FROM Paper p
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (p.abstract LIKE ? OR p.title LIKE ?) AND p.keywords IS NOT NULL
-                        ORDER BY year desc
-                    """
-                    keyword_params = filter_list + [len(filter_list), f'%{search_term}%', f'%{search_term}%']
-        else:
-            if len(filter_list) == 0:
-                if dataset:
-                    keyword_query = """
-                        SELECT keywords
-                        FROM paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id
-                        WHERE (t.text LIKE ?) AND dataset = ? AND keywords IS NOT NULL
-                        ORDER BY year desc
-                    """
-                    keyword_params = [f'%{search_term}%', dataset]
-                else:
-                    keyword_query = """
-                        SELECT keywords
-                        FROM paper p
-                        LEFT JOIN PaperText t
-                        ON p.id = t.id
-                        WHERE (t.text LIKE ?) AND keywords IS NOT NULL
-                        ORDER BY year desc
-                    """
-                    keyword_params = [f'%{search_term}%']
-            else:
-                if dataset:
-                    keyword_query = f"""
-                        SELECT keywords
-                        FROM Paper p
-                        LEFT JOIN PaperText as t
-                        ON p.id = t.id
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (t.text LIKE ?) AND p.dataset = ? AND p.keywords IS NOT NULL
-                        ORDER BY year desc
-                    """
-                    keyword_params = filter_list + [len(filter_list), f'%{search_term}%', dataset]
-                else:
-                    keyword_query = f"""
-                        SELECT keywords
-                        FROM Paper p
-                        LEFT JOIN PaperText as t
-                        ON p.id = t.id
-                        WHERE p.id IN (
-                            SELECT paper_id
-                            FROM PaperCode
-                            WHERE code IN ({placeholders})
-                            GROUP BY paper_id
-                            HAVING COUNT(DISTINCT code) = ?
-                        ) AND (t.text LIKE ?) AND p.keywords IS NOT NULL
-                        ORDER BY year desc
-                    """
-                    keyword_params = filter_list + [len(filter_list), f'%{search_term}%']
+        select_clause = "SELECT keywords FROM paper p"
+        join_clause = "" if search_params['type'] == "t1" else "LEFT JOIN PaperText t ON p.id = t.id"
+        where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
+                                                   search_params['type'] == "t2", 'p')
         
-        keyword_distribution = conn.execute(keyword_query, keyword_params).fetchall()
+        query = f"{select_clause} {join_clause} WHERE {where_clause} AND keywords IS NOT NULL ORDER BY year DESC"
+        results = conn.execute(query, params).fetchall()
         
+        # Process keywords
         keyword_count = {}
-        for (keyword_string,) in keyword_distribution:
+        for (keyword_string,) in results:
             if not keyword_string:
                 continue
             
-            keyword_list_split = []
-            if ';' in keyword_string:
-                keyword_list_split = keyword_string.split(';')
-            elif ',' in keyword_string:
-                keyword_list_split = keyword_string.split(',')
-            else:
-                keyword_list_split = [keyword_string]
+            # Split by semicolon or comma
+            delimiter = ';' if ';' in keyword_string else ','
+            keywords = [kw.strip().lower() for kw in keyword_string.split(delimiter) if kw.strip()]
             
-            for keyword in keyword_list_split:
-                keyword = keyword.strip().lower()
-                if keyword:
-                    if keyword in keyword_count:
-                        keyword_count[keyword] += 1
-                    else:
-                        keyword_count[keyword] = 1
+            for keyword in keywords:
+                keyword_count[keyword] = keyword_count.get(keyword, 0) + 1
         
-        # Sort by count (descending) and get top keywords
+        # Get top 12 keywords excluding common ones (autism, asd)
         sorted_keywords = sorted(keyword_count.items(), key=lambda x: x[1], reverse=True)
+        chart_data = [{'keyword': kw, 'count': count} 
+                      for kw, count in sorted_keywords[:12] 
+                      if kw not in ('autism', 'autism spectrum disorder')]
         
-        # Return top 12 keywords (or adjust limit as needed)
-        chart_data = []
-        for keyword, count in sorted_keywords[:12]:
-            if keyword != "autism" and keyword != "autism spectrum disorder":
-                chart_data.append({
-                    'keyword': keyword,
-                    'count': count
-                })
+        return jsonify({'success': True, 'data': chart_data})
+
+@app.route('/api/visualizations/geodata', methods=["GET"])
+def get_geodata():
+    with sqlite3.connect(DB_PATH) as conn:
+        search_params = get_search_params()
+        filter_list, placeholders = get_filter_params()
         
-        return jsonify({
-            'success': True,
-            'data': chart_data
-        })
+        select_clause = "SELECT p.locations FROM paper p"
+        join_clause = "" if search_params['type'] == "t1" else "LEFT JOIN PaperText t ON p.id = t.id"
+        where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
+                                                   search_params['type'] == "t2", 'p')
+        
+        # Add location null check
+        where_clause = f"(p.locations IS NOT NULL AND p.locations != '') AND ({where_clause})"
+        
+        query = f"{select_clause} {join_clause} WHERE {where_clause}"
+        results = conn.execute(query, params).fetchall()
+        
+        # Process locations
+        location_count = {}
+        for (location_string,) in results:
+            if not location_string:
+                continue
+            locations = [loc.strip() for loc in location_string.split(';') if loc.strip()]
+            for location in locations:
+                location_count[location] = location_count.get(location, 0) + 1
+        
+        chart_data = sorted([{'country': country, 'count': count} 
+                            for country, count in location_count.items()],
+                           key=lambda x: x['count'], reverse=True)
+        
+        return jsonify({'success': True, 'data': chart_data})
 
 
+# Program entry
 if __name__ == "__main__":
     app.run(port=5055, debug=True)
-    

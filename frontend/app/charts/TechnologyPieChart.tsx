@@ -22,7 +22,8 @@ function TechnologyPieChart({ filters }: { filters: Record<string, any> }) {
           level: filters.selectedLevel|| '',
           race: filters.selectedRace|| '',
           dataset: filters.selectedDataset|| ''
-        });      const res = await fetch(`/api/visualizations/technologydistribution?${queryParams}`);
+        });  
+      const res = await fetch(`/api/visualizations/technologydistribution?${queryParams}`);
       const data = await res.json();
       if (data.success) setPieData(data.data || []);
     };

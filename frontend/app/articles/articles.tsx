@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ArticleBox } from '~/articleBox/articleBox';
 import { ChartContainer } from '~/charts/ChartContainer';
 import  FilterPanel from '~/filters/FilterPanel'
+import  WorldGeoChart  from "~/charts/WorldGeoChart";
 
 export default function Articles() {
 
@@ -98,7 +99,7 @@ export default function Articles() {
     } else if (!search) {
       setLoading(true);
       setVisibleCount(10);
-      fetch(`http://127.0.0.1:5055/api/data`)
+      fetch(`/api/data`)
         .then(response => response.json())
         .then(response => {
           setData(response.data);
