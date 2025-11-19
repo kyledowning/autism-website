@@ -23,7 +23,7 @@ export function useArticleSearch(filters: FilterState) {
       filters.selectedDataset ||
       filters.selectedLevel ||
       filters.selectedRace ||
-      filters.selectedSearchType || 't1'
+      filters.selectedSearchType !== 't1'
     );
   }, [filters]);
 

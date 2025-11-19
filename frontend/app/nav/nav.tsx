@@ -14,7 +14,7 @@ export function Nav() {
             paddingBottom: '4px'
           }}>
             
-            <h1 className="text-xl md:text-2xl font-weight-200 tracking-widest"
+            <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-weight-200 tracking-wide sm:tracking-widest"
               style={{ color: 'var(--text-primary)' }}
             >
               Autism Research Collaboration
@@ -22,12 +22,12 @@ export function Nav() {
           </div>
         </a>
 
-        <div className="flex items-center gap-8">
-          <div className="flex items-center space-x-1">
+        <div className="flex items-center gap-2 sm:gap-8">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             <a
               href="/"
               style={{ color: 'var(--text-secondary)' }}
-              className="hover:text-blue-600 font-medium px-4 py-2 rounded transition-colors"
+              className="hover:text-blue-600 font-medium px-2 sm:px-4 py-2 rounded transition-colors text-xs sm:text-base touch-manipulation min-h-[44px] flex items-center"
             >
               Home
             </a>
@@ -35,7 +35,7 @@ export function Nav() {
             <a
               href="/search"
               style={{ color: 'var(--text-secondary)' }}
-              className="hover:text-blue-600 font-medium px-4 py-2 rounded transition-colors"
+              className="hover:text-blue-600 font-medium px-2 sm:px-4 py-2 rounded transition-colors text-xs sm:text-base touch-manipulation min-h-[44px] flex items-center"
             >
               Search
             </a>
@@ -43,7 +43,7 @@ export function Nav() {
             <a
               href="/help"
               style={{ color: 'var(--text-secondary)' }}
-              className="hover:text-blue-600 font-medium px-4 py-2 rounded transition-colors"
+              className="hover:text-blue-600 font-medium px-2 sm:px-4 py-2 rounded transition-colors text-xs sm:text-base touch-manipulation min-h-[44px] flex items-center"
             >
               Help
             </a>
@@ -51,7 +51,7 @@ export function Nav() {
             {/* <a
               href="/docs"
               style={{ color: 'var(--text-secondary)' }}
-              className="hover:text-blue-600 font-medium px-4 py-2 rounded transition-colors"
+              className="hover:text-blue-600 font-medium px-2 sm:px-4 py-2 rounded transition-colors text-xs sm:text-base touch-manipulation min-h-[44px] flex items-center"
             >
               Docs
             </a> */}
@@ -59,20 +59,20 @@ export function Nav() {
             <a
               href="/about"
               style={{ color: 'var(--text-secondary)' }}
-              className="hover:text-blue-600 font-medium px-4 py-2 rounded transition-colors"
+              className="hover:text-blue-600 font-medium px-2 sm:px-4 py-2 rounded transition-colors text-xs sm:text-base touch-manipulation min-h-[44px] flex items-center"
             >
               About
             </a>
           </div>
 
-          <div className="flex items-center space-x-2 border-l pl-4" style={{ borderColor: 'var(--border-color)' }}>
+          <div className="flex items-center space-x-2 border-l pl-2 sm:pl-4" style={{ borderColor: 'var(--border-color)' }}>
             <button
               onClick={toggleTheme}
               style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
-              className="p-2 rounded border transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-1.5 sm:p-2 rounded border transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {theme === 'dark' ? <Sun className="w-4 h-4 sm:w-5 sm:h-5" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
           </div>
         </div>

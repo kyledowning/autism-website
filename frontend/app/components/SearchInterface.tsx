@@ -10,11 +10,26 @@ import { useArticleSearch } from '~/hooks/useArticleSearch';
 export default function SearchInterface() {
   const [searchParams] = useSearchParams();
   const [inputValue, setInputValue] = useState('');
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [showVisualizations, setShowVisualizations] = useState(true);
   const [showAbstract, setShowAbstract] = useState(true);
   const [showKeywords, setShowKeywords] = useState(true);
   const [itemsPerLoad, setItemsPerLoad] = useState(10);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setShowFilters(true);
+        setShowVisualizations(true);
+      } else {
+        setShowFilters(false);
+        setShowVisualizations(false);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const [visibleCount, setVisibleCount] = useState(itemsPerLoad);
 
@@ -134,7 +149,7 @@ export default function SearchInterface() {
               borderColor: 'blue',
               color: 'var(--text-primary)',
             }}
-            className="px-4 sm:px-20 py-3 sm:py-4 lg:py-2 border rounded-2xl text-sm sm:text-base whitespace-nowrap shadow-sm hover:shadow-lg hover:bg-blue-500 transition-all duration-300 cursor-pointer"
+            className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 lg:py-2 border rounded-2xl text-sm sm:text-base whitespace-nowrap shadow-sm hover:shadow-lg hover:bg-blue-500 transition-all duration-300 cursor-pointer"
           >
             Search
           </button>
@@ -145,7 +160,7 @@ export default function SearchInterface() {
               borderColor: 'red',
               color: 'var(--text-primary)',
             }}
-            className="px-4 sm:px-20 py-3 sm:py-4 lg:py-2 border rounded-2xl text-sm sm:text-base whitespace-nowrap shadow-sm hover:shadow-lg hover:bg-red-500 transition-all duration-300 cursor-pointer"
+            className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 lg:py-2 border rounded-2xl text-sm sm:text-base whitespace-nowrap shadow-sm hover:shadow-lg hover:bg-red-500 transition-all duration-300 cursor-pointer"
           >
             Reset
           </button>
@@ -156,9 +171,10 @@ export default function SearchInterface() {
               borderColor: 'var(--border-color)',
               color: 'var(--text-primary)',
             }}
-            className="text-sm sm:text-base whitespace-nowrap px-4 sm:px-12 py-3 sm:py-4 lg:py-2 border rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer flex items-center gap-2 justify-center"
+            className="text-sm sm:text-base px-3 sm:px-4 md:px-6 py-3 sm:py-4 lg:py-2 border rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer flex items-center gap-1 sm:gap-2 justify-center"
           >
-            {showVisualizations ? 'Hide' : 'Show'} Visualizations
+            <span className="hidden sm:inline">{showVisualizations ? 'Hide' : 'Show'} Visualizations</span>
+            <span className="sm:hidden">{showVisualizations ? 'Hide' : 'Show'} Vis</span>
           </button>
 
         </div>
@@ -329,42 +345,118 @@ export default function SearchInterface() {
         {/* Main Content */}
         <div className="flex gap-5 pb-15 relative">
 
-          {/* Filter Panel */}
+          {/* Filter Modal Backdrop (mobile only) */}
+          {showFilters && (
+            <div
+              className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4"
+              onClick={() => setShowFilters(false)}
+            >
+              {/* Filter Modal Content */}
+              <div
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[85vh] overflow-hidden"
+                style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div
+                  className="flex items-center justify-between p-4 border-b"
+                  style={{ borderColor: 'var(--border-color)' }}
+                >
+                  <h2
+                    className="text-lg font-bold"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    Filters
+                  </h2>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="text-2xl leading-none hover:text-blue-500 transition-colors"
+                    style={{ color: 'var(--text-secondary)' }}
+                    aria-label="Close filters"
+                  >
+                    ×
+                  </button>
+                </div>
+                {/* Modal Body */}
+                <div className="overflow-y-auto max-h-[calc(85vh-60px)] p-4">
+                  <FilterPanel
+                    showFilters={true}
+                    selectedAge={filters.selectedAge}
+                    setSelectedAge={setAge}
+                    selectedGender={filters.selectedGender}
+                    setSelectedGender={setGender}
+                    selectedLanguage={filters.selectedLanguage}
+                    setSelectedLanguage={setLanguage}
+                    selectedParticipantNumber={filters.selectedParticipantNumber}
+                    setSelectedParticipantNumber={setParticipantNumber}
+                    selectedTargetUser={filters.selectedTargetUser}
+                    setSelectedTargetUser={setTargetUser}
+                    selectedTechnology={filters.selectedTechnology}
+                    setSelectedTechnology={setTechnology}
+                    selectedChallenge={filters.selectedChallenge}
+                    setSelectedChallenge={setChallenge}
+                    selectedProblem={filters.selectedProblem}
+                    setSelectedProblem={setProblem}
+                    selectedLevel={filters.selectedLevel}
+                    setSelectedLevel={setLevel}
+                    selectedRace={filters.selectedRace}
+                    setSelectedRace={setRace}
+                    selectedDataset={filters.selectedDataset}
+                    setSelectedDataset={setDataset}
+                    selectedSearchType={filters.selectedSearchType}
+                    setSelectedSearchType={(value: string) =>
+                      setSearchType(value as 't1' | 't2')
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Filter Panel (desktop only) */}
           <div
-            className={`transition-all duration-300 ${
-              showFilters ? 'w-64 opacity-100' : 'w-0 opacity-0 overflow-hidden'
+            className={`hidden lg:block transition-all duration-300 ${
+              showFilters ? 'lg:w-64' : 'lg:w-0 overflow-hidden'
             }`}
           >
             <div className="sticky top-4">
-              <FilterPanel
-                showFilters={showFilters}
-                selectedAge={filters.selectedAge}
-                setSelectedAge={setAge}
-                selectedGender={filters.selectedGender}
-                setSelectedGender={setGender}
-                selectedLanguage={filters.selectedLanguage}
-                setSelectedLanguage={setLanguage}
-                selectedParticipantNumber={filters.selectedParticipantNumber}
-                setSelectedParticipantNumber={setParticipantNumber}
-                selectedTargetUser={filters.selectedTargetUser}
-                setSelectedTargetUser={setTargetUser}
-                selectedTechnology={filters.selectedTechnology}
-                setSelectedTechnology={setTechnology}
-                selectedChallenge={filters.selectedChallenge}
-                setSelectedChallenge={setChallenge}
-                selectedProblem={filters.selectedProblem}
-                setSelectedProblem={setProblem}
-                selectedLevel={filters.selectedLevel}
-                setSelectedLevel={setLevel}
-                selectedRace={filters.selectedRace}
-                setSelectedRace={setRace}
-                selectedDataset={filters.selectedDataset}
-                setSelectedDataset={setDataset}
-                selectedSearchType={filters.selectedSearchType}
-                setSelectedSearchType={(value: string) =>
-                  setSearchType(value as 't1' | 't2')
-                }
-              />
+              <div
+                style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}
+                className="h-[75vh] rounded-lg border p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-700"
+              >
+                <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-lg mb-4">
+                  Filters
+                </h3>
+                <FilterPanel
+                  showFilters={showFilters}
+                  selectedAge={filters.selectedAge}
+                  setSelectedAge={setAge}
+                  selectedGender={filters.selectedGender}
+                  setSelectedGender={setGender}
+                  selectedLanguage={filters.selectedLanguage}
+                  setSelectedLanguage={setLanguage}
+                  selectedParticipantNumber={filters.selectedParticipantNumber}
+                  setSelectedParticipantNumber={setParticipantNumber}
+                  selectedTargetUser={filters.selectedTargetUser}
+                  setSelectedTargetUser={setTargetUser}
+                  selectedTechnology={filters.selectedTechnology}
+                  setSelectedTechnology={setTechnology}
+                  selectedChallenge={filters.selectedChallenge}
+                  setSelectedChallenge={setChallenge}
+                  selectedProblem={filters.selectedProblem}
+                  setSelectedProblem={setProblem}
+                  selectedLevel={filters.selectedLevel}
+                  setSelectedLevel={setLevel}
+                  selectedRace={filters.selectedRace}
+                  setSelectedRace={setRace}
+                  selectedDataset={filters.selectedDataset}
+                  setSelectedDataset={setDataset}
+                  selectedSearchType={filters.selectedSearchType}
+                  setSelectedSearchType={(value: string) =>
+                    setSearchType(value as 't1' | 't2')
+                  }
+                />
+              </div>
             </div>
           </div>
 
@@ -376,8 +468,8 @@ export default function SearchInterface() {
               borderColor: 'var(--border-color)',
               color: 'var(--text-primary)',
             }}
-            className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 border p-3 rounded-r-lg hover:bg-blue-500 transition-all duration-300 cursor-pointer ${
-              showFilters ? 'translate-x-64' : 'translate-x-0'
+            className={`fixed lg:absolute left-0 top-1/2 -translate-y-1/2 z-10 border p-2 sm:p-3 rounded-r-lg hover:bg-blue-500 transition-all duration-300 cursor-pointer text-sm sm:text-base touch-manipulation ${
+              showFilters ? 'lg:translate-x-64' : 'translate-x-0'
             }`}
             title={showFilters ? 'Hide Filters' : 'Show Filters'}
           >
@@ -386,7 +478,7 @@ export default function SearchInterface() {
 
           <div
             className={`flex-1 grid gap-5 transition-all duration-300 ${
-              showVisualizations ? 'md:grid-cols-2' : 'grid-cols-1'
+              showVisualizations ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'
             }`}
           >
             {/* Articles */}

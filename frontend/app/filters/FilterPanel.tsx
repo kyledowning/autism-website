@@ -133,10 +133,9 @@ export default function FilterPanel({
     );
   };
 
-  
+
   return (
-    <div style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }} className="h-[75vh] rounded-lg border p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-700">
-      <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-lg mb-4">Filters</h3>
+    <div className="space-y-4">
       
       <FilterSection
         title="Search Type"
@@ -354,7 +353,6 @@ export default function FilterPanel({
           { value: 'IEEE Xplore', label: 'IEEE' }
         ]}
       />
-      
     </div>
   );
 }
