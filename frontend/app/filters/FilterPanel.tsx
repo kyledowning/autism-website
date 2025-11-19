@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface FiltersProps {
   showFilters: boolean;
@@ -56,202 +56,305 @@ export default function FilterPanel({
   setSelectedSearchType
 }: FiltersProps) {
 
+  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
+    age: false,
+    gender: false,
+    language: false,
+    participantNumber: false,
+    targetUser: false,
+    technology: false,
+    challenge: false,
+    problem: false,
+    level: false,
+    race: false,
+    dataset: false,
+    searchType: false
+  });
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   if (!showFilters) return null;
 
+  const FilterSection = ({ 
+    title, 
+    sectionKey, 
+    options, 
+    selectedValue, 
+    onChange 
+  }: { 
+    title: string; 
+    sectionKey: string; 
+    options: {value: string; label: string}[]; 
+    selectedValue: string; 
+    onChange: (value: string) => void;
+  }) => {
+    const isExpanded = expandedSections[sectionKey];
+    const selectedLabel = options.find(opt => opt.value === selectedValue)?.label || title;
+    
+    return (
+      <div className="mb-4">
+        <button
+          onClick={() => toggleSection(sectionKey)}
+          style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+          className="w-full px-4 py-3 border rounded-lg text-left flex justify-between items-center hover:bg-blue-500 transition-colors duration-200 cursor-pointer"
+        >
+          <span className="text-sm font-medium">
+            {selectedValue ? selectedLabel : title}
+          </span>
+          <span className="text-lg">{isExpanded ? '▲' : '▼'}</span>
+        </button>
+
+        {isExpanded && (
+          <div style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }} className="mt-1 border rounded-lg overflow-hidden max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-700">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  onChange(option.value);
+                }}
+                style={{
+                  backgroundColor: selectedValue === option.value ? '#1e3a8a' : 'var(--bg-secondary)',
+                  color: selectedValue === option.value ? '#dbeafe' : 'var(--text-secondary)'
+                }}
+                className={`w-full px-4 py-2 text-left text-sm transition-all duration-400 hover:bg-blue-500 cursor-pointer
+                `}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5 p-3 sm:p-4 bg-gray-750 rounded-lg border border-gray-600">
-      <select
-        id="age"
-        value={selectedAge}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedAge(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Age Group --</option>
-        <option value="missing">Age: Missing</option>
-        <option value="noparticipants">Age: No Participants</option>
-        <option value="child">Age: Child</option>
-        <option value="youngadult">Age: Young Adult</option>
-        <option value="adolescent">Age: Adolescent</option>
-        <option value="adult">Age: Adult</option>
-      </select>
+    <div style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }} className="h-[75vh] rounded-lg border p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-700">
+      <h3 style={{ color: 'var(--text-primary)' }} className="font-bold text-lg mb-4">Filters</h3>
+      
+      <FilterSection
+        title="Search Type"
+        sectionKey="searchType"
+        selectedValue={selectedSearchType}
+        onChange={setSelectedSearchType}
+        options={[
+          { value: 't1', label: 'Title and Abstract' },
+          { value: 't2', label: 'Full Text' }
+       ]}
+      />
+            
+      <FilterSection
+        title="Age Group"
+        sectionKey="age"
+        selectedValue={selectedAge}
+        onChange={setSelectedAge}
+        options={[
+          { value: '', label: 'All Ages' },
+          { value: 'missing', label: 'Missing' },
+          { value: 'noparticipants', label: 'No Participants' },
+          { value: 'child', label: 'Child' },
+          { value: 'youngadult', label: 'Young Adult' },
+          { value: 'adolescent', label: 'Adolescent' },
+          { value: 'adult', label: 'Adult' }
+        ]}
+      />
 
-      <select
-        id="gender"
-        value={selectedGender}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedGender(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Gender --</option>
-        <option value="missing">Gender: Missing</option>
-        <option value="noparticipants">Gender: No Participants</option>
-        <option value="balanced">Gender: Balanced</option>
-        <option value="onlyfemale">Gender: Female (only)</option>
-        <option value="primarilyfemale">Gender: Female (mostly)</option>
-        <option value="onlymale">Gender: Male (only)</option>
-        <option value="primarilymale">Gender: Male (mostly)</option>
-        <option value="onlynonbinary">Gender: Non-binary (only)</option>
-        <option value="primarilynonbinary">Gender: Non-binary (mostly)</option>
-        <option value="transgender">Gender: Transgender</option>
-      </select>
+      <FilterSection
+        title="Gender"
+        sectionKey="gender"
+        selectedValue={selectedGender}
+        onChange={setSelectedGender}
+        options={[
+          { value: '', label: 'All Genders' },
+          { value: 'missing', label: 'Missing' },
+          { value: 'noparticipants', label: 'No Participants' },
+          { value: 'balanced', label: 'Balanced' },
+          { value: 'onlyfemale', label: 'Female (only)' },
+          { value: 'primarilyfemale', label: 'Female (mostly)' },
+          { value: 'onlymale', label: 'Male (only)' },
+          { value: 'primarilymale', label: 'Male (mostly)' },
+          { value: 'onlynonbinary', label: 'Non-binary (only)' },
+          { value: 'primarilynonbinary', label: 'Non-binary (mostly)' },
+          { value: 'transgender', label: 'Transgender' }
+        ]}
+      />
 
-      <select
-        id="language"
-        value={selectedLanguage}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedLanguage(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Language Type --</option>
-        <option value="avoidant">Language Type: Avoidant</option>
-        <option value="personfirst">Language Type: Person First</option>
-        <option value="identityfirst">Language Type: Identity First</option>
-        <option value="mixed">Language Type: Mixed</option>
-      </select>
+      <FilterSection
+        title="Language Type"
+        sectionKey="language"
+        selectedValue={selectedLanguage}
+        onChange={setSelectedLanguage}
+        options={[
+          { value: '', label: 'All Languages' },
+          { value: 'avoidant', label: 'Avoidant' },
+          { value: 'personfirst', label: 'Person First' },
+          { value: 'identityfirst', label: 'Identity First' },
+          { value: 'mixed', label: 'Mixed' }
+        ]}
+      />
 
-      <select
-        id="participantnumber"
-        value={selectedParticipantNumber}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedParticipantNumber(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Participant Size --</option>
-        <option value="none">Participant Size: None</option>
-        <option value="missing">Participant Size: Missing</option>
-        <option value="small">Participant Size: Small</option>
-        <option value="medium">Participant Size: Medium</option>
-        <option value="large">Participant Size: Large</option>
-      </select>
+      <FilterSection
+        title="Participant Size"
+        sectionKey="participantNumber"
+        selectedValue={selectedParticipantNumber}
+        onChange={setSelectedParticipantNumber}
+        options={[
+          { value: '', label: 'All Sizes' },
+          { value: 'none', label: 'None' },
+          { value: 'missing', label: 'Missing' },
+          { value: 'small', label: 'Small' },
+          { value: 'medium', label: 'Medium' },
+          { value: 'large', label: 'Large' }
+        ]}
+      />
 
-      <select
-        id="targetuser"
-        value={selectedTargetUser}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedTargetUser(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Target User Type --</option>
-        <option value="researchers">Target User: Researchers</option>
-        <option value="autisticpeople">Target User: Persons with Autism</option>
-        <option value="parents">Target User: Parents</option>
-        <option value="teachers">Target User: Teachers</option>
-        <option value="caregivers">Target User: Caregivers</option>
-      </select>
+      <FilterSection
+        title="Target User"
+        sectionKey="targetUser"
+        selectedValue={selectedTargetUser}
+        onChange={setSelectedTargetUser}
+        options={[
+          { value: '', label: 'All Users' },
+          { value: 'researchers', label: 'Researchers' },
+          { value: 'autisticpeople', label: 'Persons with Autism' },
+          { value: 'parents', label: 'Parents' },
+          { value: 'teachers', label: 'Teachers' },
+          { value: 'caregivers', label: 'Caregivers' }
+        ]}
+      />
 
-      <select
-        id="technology"
-        value={selectedTechnology}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedTechnology(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Technology Type --</option>
-        <option value="machinelearning">Technology: Machine Learning</option>
-        <option value="robot">Technology: Robot</option>
-        <option value="fMRI">Technology: fMRI</option>
-        <option value="virtualreality">Technology: VR</option>
-        <option value="game">Technology: Game</option>
-        <option value="eyetracking">Technology: Eye Tracking</option>
-        <option value="neuralnetwork">Technology: Neural Network</option>
-        <option value="facialrecognition">Technology: Facial Recognition</option>
-        <option value="deeplearning">Technology: Deep Learning</option>
-        <option value="literaturereview">Technology: Literature Review</option>
-        <option value="mobileapp">Technology: Mobile App</option>
-        <option value="electroencephalogram">Technology: Electroencephalogram</option>
-        <option value="augmentedreality">Technology: Augmented Reality</option>
-        <option value="dataanalysis">Technology: Data Analysis</option>
-        <option value="wearables">Technology: Wearables</option>
-        <option value="interview">Technology: Interview</option>
-        <option value="video">Technology: Video</option>
-        <option value="framework">Technology: Framework</option>
-        <option value="motioncapture">Technology: Motion Capture</option>
-        <option value="webapp">Technology: Web App</option>
-        <option value="tablet">Technology: Tablet</option>
-        <option value="MRI">Technology: MRI</option>
-        <option value="survey">Technology: Survey</option>
-        <option value="EEG">Technology: EEG</option>
-        <option value="ipad">Technology: iPad</option>
-      </select>
+      <FilterSection
+        title="Technology"
+        sectionKey="technology"
+        selectedValue={selectedTechnology}
+        onChange={setSelectedTechnology}
+        options={[
+          { value: '', label: 'All Technologies' },
+          { value: 'machinelearning', label: 'Machine Learning' },
+          { value: 'robot', label: 'Robot' },
+          { value: 'fMRI', label: 'fMRI' },
+          { value: 'virtualreality', label: 'VR' },
+          { value: 'game', label: 'Game' },
+          { value: 'eyetracking', label: 'Eye Tracking' },
+          { value: 'neuralnetwork', label: 'Neural Network' },
+          { value: 'facialrecognition', label: 'Facial Recognition' },
+          { value: 'deeplearning', label: 'Deep Learning' },
+          { value: 'literaturereview', label: 'Literature Review' },
+          { value: 'mobileapp', label: 'Mobile App' },
+          { value: 'electroencephalogram', label: 'Electroencephalogram' },
+          { value: 'augmentedreality', label: 'Augmented Reality' },
+          { value: 'dataanalysis', label: 'Data Analysis' },
+          { value: 'wearables', label: 'Wearables' },
+          { value: 'interview', label: 'Interview' },
+          { value: 'video', label: 'Video' },
+          { value: 'framework', label: 'Framework' },
+          { value: 'motioncapture', label: 'Motion Capture' },
+          { value: 'webapp', label: 'Web App' },
+          { value: 'tablet', label: 'Tablet' },
+          { value: 'MRI', label: 'MRI' },
+          { value: 'survey', label: 'Survey' },
+          { value: 'EEG', label: 'EEG' },
+          { value: 'ipad', label: 'iPad' }
+        ]}
+      />
 
-      <select
-        id="challenge"
-        value={selectedChallenge}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedChallenge(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Challenge Type --</option>
-        <option value="missing">Challenge: Missing</option>
-        <option value="social">Challenge: Social</option>
-        <option value="communication">Challenge: Communication</option>
-        <option value="repetitivebehavior">Challenge: Repetitive Behavior</option>
-        <option value="emotion">Challenge: Emotion</option>
-        <option value="education">Challenge: Education</option>
-        <option value="sensory">Challenge: Sensory</option>
-        <option value="behavior">Challenge: Behavior</option>
-        <option value="speech">Challenge: Speech</option>
-        <option value="diagnosis">Challenge: Diagnosis</option>
-        <option value="motorcontrol">Challenge: Motor Control</option>
-        <option value="attention">Challenge: Attention</option>
-        <option value="eyecontact">Challenge: Eye Contact</option>
-        <option value="cognitive">Challenge: Cognitive</option>
-        <option value="jointattention">Challenge: Joint Attention</option>
-        <option value="motorskills">Challenge: Motor Skills</option>
-        <option value="independence">Challenge: Independence</option>
-        <option value="emotionrecognition">Challenge: Emotion Recognition</option>
-        <option value="anxiety">Challenge: Anxiety</option>
-        <option value="interaction">Challenge: Interaction</option>
-        <option value="learning">Challenge: Learning</option>
-      </select>
+      <FilterSection
+        title="Challenge"
+        sectionKey="challenge"
+        selectedValue={selectedChallenge}
+        onChange={setSelectedChallenge}
+        options={[
+          { value: '', label: 'All Challenges' },
+          { value: 'missing', label: 'Missing' },
+          { value: 'social', label: 'Social' },
+          { value: 'communication', label: 'Communication' },
+          { value: 'repetitivebehavior', label: 'Repetitive Behavior' },
+          { value: 'emotion', label: 'Emotion' },
+          { value: 'education', label: 'Education' },
+          { value: 'sensory', label: 'Sensory' },
+          { value: 'behavior', label: 'Behavior' },
+          { value: 'speech', label: 'Speech' },
+          { value: 'diagnosis', label: 'Diagnosis' },
+          { value: 'motorcontrol', label: 'Motor Control' },
+          { value: 'attention', label: 'Attention' },
+          { value: 'eyecontact', label: 'Eye Contact' },
+          { value: 'cognitive', label: 'Cognitive' },
+          { value: 'jointattention', label: 'Joint Attention' },
+          { value: 'motorskills', label: 'Motor Skills' },
+          { value: 'independence', label: 'Independence' },
+          { value: 'emotionrecognition', label: 'Emotion Recognition' },
+          { value: 'anxiety', label: 'Anxiety' },
+          { value: 'interaction', label: 'Interaction' },
+          { value: 'learning', label: 'Learning' }
+        ]}
+      />
 
-      <select
-        id="problem"
-        value={selectedProblem}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedProblem(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Problem Type --</option>
-        <option value="missing">Problem: Missing</option>
-        <option value="intervention">Problem: Intervention</option>
-        <option value="diagnosis">Problem: Diagnosis</option>
-        <option value="understanding">Problem: Understanding</option>
-        <option value="analytictool">Problem: Analytic Tool</option>
-        <option value="codesign">Problem: Code Sign</option>
-        <option value="training">Problem: Training</option>
-        <option value="awareness">Problem: Awareness</option>
-        <option value="framework">Problem: Framework</option>
-        <option value="other">Problem: Other</option>
-      </select>
+      <FilterSection
+        title="Problem"
+        sectionKey="problem"
+        selectedValue={selectedProblem}
+        onChange={setSelectedProblem}
+        options={[
+          { value: '', label: 'All Problems' },
+          { value: 'missing', label: 'Missing' },
+          { value: 'intervention', label: 'Intervention' },
+          { value: 'diagnosis', label: 'Diagnosis' },
+          { value: 'understanding', label: 'Understanding' },
+          { value: 'analytictool', label: 'Analytic Tool' },
+          { value: 'codesign', label: 'Code Sign' },
+          { value: 'training', label: 'Training' },
+          { value: 'awareness', label: 'Awareness' },
+          { value: 'framework', label: 'Framework' },
+          { value: 'other', label: 'Other' }
+        ]}
+      />
 
-      <select
-        id="level"
-        value={selectedLevel}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedLevel(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Level Type --</option>
-        <option value="missing">Level: Missing</option>
-        <option value="highfunctioning">Level: High Functioning</option>
-        <option value="lowfunctioning">Level: Low Functioning</option>
-        <option value="verbal">Level: Verbal</option>
-        <option value="nonverbal">Level: Non-verbal</option>
-      </select>
+      <FilterSection
+        title="Level"
+        sectionKey="level"
+        selectedValue={selectedLevel}
+        onChange={setSelectedLevel}
+        options={[
+          { value: '', label: 'All Levels' },
+          { value: 'missing', label: 'Missing' },
+          { value: 'highfunctioning', label: 'High Functioning' },
+          { value: 'lowfunctioning', label: 'Low Functioning' },
+          { value: 'verbal', label: 'Verbal' },
+          { value: 'nonverbal', label: 'Non-verbal' }
+        ]}
+      />
 
-      <select
-        id="race"
-        value={selectedRace}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedRace(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Race --</option>
-        <option value="noparticipants">Race: No Participants</option>
-        <option value="missing">Race: Missing</option>
-        <option value="present">Race: Present</option>
-      </select>
+      <FilterSection
+        title="Race"
+        sectionKey="race"
+        selectedValue={selectedRace}
+        onChange={setSelectedRace}
+        options={[
+          { value: '', label: 'All Races' },
+          { value: 'noparticipants', label: 'No Participants' },
+          { value: 'missing', label: 'Missing' },
+          { value: 'present', label: 'Present' }
+        ]}
+      />
 
-      <select
-        id="dataset"
-        value={selectedDataset}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedDataset(e.target.value)}
-        className="w-full p-3 rounded border border-gray-600 text-sm sm:text-base text-center cursor-pointer bg-gray-700 text-gray-300 focus:bg-gray-600 focus:text-gray-100 transition-colors duration-200">
-        <option value="">-- Select Dataset --</option>
-        <option value="ACM Digital Library">Dataset: ACM</option>
-        <option value="IEEE Xplore">Dataset: IEEE</option>
-      </select>
-
-      <select
-        id="searchtype"
-        value={selectedSearchType}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSearchType(e.target.value)}
-        className="w-full p-3 rounded border border-blue-500 bg-blue-900 text-blue-100 text-sm sm:text-base text-center cursor-pointer">
-        <option value="t1">Search Type: Title and Abstract</option>
-        <option value="t2">Search Type: Full Text</option>
-      </select>
+      <FilterSection
+        title="Dataset"
+        sectionKey="dataset"
+        selectedValue={selectedDataset}
+        onChange={setSelectedDataset}
+        options={[
+          { value: '', label: 'All Datasets' },
+          { value: 'ACM Digital Library', label: 'ACM' },
+          { value: 'IEEE Xplore', label: 'IEEE' }
+        ]}
+      />
+      
     </div>
   );
 }

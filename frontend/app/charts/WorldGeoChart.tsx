@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Chart } from "react-google-charts";
+import { useTheme } from '~/context/ThemeContext';
 
 function WorldGeoChart({ filters }: { filters: Record<string, any> }) {
+  const { theme } = useTheme();
   const [GeoData, setGeoData] = useState<[string, string | number][]>([["Country", "Count"]]);
 
   // Function to convert database format to Google Charts format
@@ -47,7 +49,7 @@ const prepareGeoChartData = (entries: any[]) => {
           race: filters.selectedRace|| '',
           dataset: filters.selectedDataset|| ''
         });
-        const response = await fetch(`/api/visualizations/geodata?${queryParams}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/visualizations/geodata?${queryParams}`);
         const data = await response.json();
         if (data.success && data.data) {
           const chartData = prepareGeoChartData(data.data, 'country');
@@ -62,8 +64,8 @@ const prepareGeoChartData = (entries: any[]) => {
   }, [filters]);
 
   return (
-    <div className="bg-gray-750 p-4 m-2 rounded-lg border border-gray-600">
-        <h3 className="text-lg font-semibold text-center mb-4 text-gray-100">Map of location of publications</h3>
+    <div style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-color)' }} className="p-4 m-2 rounded-lg border">
+        <h3 style={{ color: 'var(--text-primary)' }} className="text-lg font-semibold text-center mb-4">Map of location of publications</h3>
         <Chart
         className="rounded-lg m-1"
         chartType="GeoChart"
@@ -72,7 +74,7 @@ const prepareGeoChartData = (entries: any[]) => {
         height="500px"
         options={{
             backgroundColor: {
-                fill: "#1F2937",
+                fill: theme === 'dark' ? "#1F2937" : "#ffffff",
                 fillOpacity: 1,
             },
             colorAxis: {

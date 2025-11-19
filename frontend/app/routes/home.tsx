@@ -1,22 +1,17 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
-import { Footer } from "~/footer/footer";
-import { Nav } from "../nav/nav"
-
+import { LandingPage } from "~/components/LandingPage";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Home" },
-    { name: "Autism database tool", content: "" },
+    { title: "Home - Autism Research Collaboration" },
+    { name: "description", content: "Search and explore autism research papers from IEEE Xplore and ACM Digital Library" },
   ];
 }
 
 export default function Home() {
   return (
     <>
-      <Nav />
-      <Welcome />
-      <Footer />
+      <LandingPage />
     </>
   );
 }

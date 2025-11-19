@@ -1,22 +1,17 @@
-import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
-import { Nav } from "../nav/nav"
-import Articles from "../articles/articles";
-import { Footer } from "~/footer/footer";
- 
+import type { Route } from "./+types/search";
+import SearchInterface from "~/components/SearchInterface";
+
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Search" },
-    { name: "Search database", content: "" },
+    { title: "Search - Autism Research Collaboration" },
+    { name: "description", content: "Search and filter autism research papers by multiple criteria" },
   ];
 }
 
 export default function Search() {
   return (
     <>
-      <Nav />
-      <Articles />
-      <Footer />
+      <SearchInterface />
     </>
   );
 }

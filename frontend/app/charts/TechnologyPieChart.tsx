@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Tooltip, Cell, ResponsiveContainer } from 'recharts';
+import { useTheme } from '~/context/ThemeContext';
 
 const COLORS = ['#93C5FD', '#6EE7B7', '#FCD34D', '#FCA5A5', '#C4B5FD'];
 
 function TechnologyPieChart({ filters }: { filters: Record<string, any> }) {
+  const { theme } = useTheme();
   const [pieData, setPieData] = useState<{ technology: string; count: number }[]>([]);
 
   useEffect(() => {
@@ -22,25 +24,29 @@ function TechnologyPieChart({ filters }: { filters: Record<string, any> }) {
           level: filters.selectedLevel|| '',
           race: filters.selectedRace|| '',
           dataset: filters.selectedDataset|| ''
-        });  
-      const res = await fetch(`/api/visualizations/technologydistribution?${queryParams}`);
+        });
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/visualizations/technologydistribution?${queryParams}`);
       const data = await res.json();
       if (data.success) setPieData(data.data || []);
     };
     fetchPieData();
   }, [filters]);
 
+  const tooltipBg = theme === 'dark' ? '#1a202c' : '#ffffff';
+  const tooltipBorder = theme === 'dark' ? '#4B5563' : '#D1D5DB';
+  const tooltipText = theme === 'dark' ? '#E5E7EB' : '#1F2937';
+
   return (
-    <div className="bg-gray-750 p-4 m-2 rounded-lg w-[100%] border border-gray-600">
-      <h3 className="text-lg font-semibold text-center mb-4 text-gray-100">
+    <div style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-color)' }} className="p-4 m-2 rounded-lg w-[100%] border">
+      <h3 style={{ color: 'var(--text-primary)' }} className="text-lg font-semibold text-center mb-4">
         Distribution of Technologies used
       </h3>
       <ResponsiveContainer width="100%" height={250}>
         <PieChart>
-          <Tooltip 
-            contentStyle={{ backgroundColor: '#4B5563', border: '1px solid #4B5563', borderRadius: '8px' }}
-            itemStyle={{ color: '#E5E7EB' }}
-          />          
+          <Tooltip
+            contentStyle={{ backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: '8px' }}
+            itemStyle={{ color: tooltipText }}
+          />
           <Pie data={pieData} dataKey="count" nameKey="technology" cx="50%" cy="50%"
           label={({ technology, count }) => `${technology}: ${count}`}
           >

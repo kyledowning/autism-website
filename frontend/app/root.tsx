@@ -7,8 +7,13 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import React from "react";
+import { Nav } from "./nav/nav";
+import { ThemeProvider } from "./context/ThemeContext";
 import type { Route } from "./+types/root";
 import "./app.css";
+import { Footer } from "./footer/footer";
+
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -31,9 +36,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme') || 'dark';
+                  document.documentElement.setAttribute('data-theme', theme);
+                  document.documentElement.style.backgroundColor = theme === 'dark' ? '#0f172a' : '#f9fafb';
+                } catch (e) {
+                  // Fallback for browsers that don't support localStorage
+                  document.documentElement.setAttribute('data-theme', 'dark');
+                  document.documentElement.style.backgroundColor = '#0f172a';
+                }
+              })();
+            `,
+          }}
+        />
       </head>
-      <body>
-        {children}
+      <body className="min-h-screen flex flex-col">
+        <ThemeProvider>
+          <Nav />
+          <main className="flex-grow">
+            {children}
+          </main>
+        <Footer />
+        </ThemeProvider>
+
         <ScrollRestoration />
         <Scripts />
       </body>

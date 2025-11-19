@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, CartesianGrid, Tooltip, XAxis, YAxis, Bar, ResponsiveContainer } from 'recharts';
+import { useTheme } from '~/context/ThemeContext';
 
 const COLORS = ['#93C5FD', '#6EE7B7', '#FCD34D', '#FCA5A5', '#C4B5FD'];
 
 function KeywordBarChart({ filters }: { filters: Record<string, any> }) {
+  const { theme } = useTheme();
   const [keywordData, setKeywordData] = useState<{ name: string; count: number }[]>([]);
 
   useEffect(() => {
@@ -23,8 +25,8 @@ function KeywordBarChart({ filters }: { filters: Record<string, any> }) {
           level: filters.selectedLevel|| '',
           race: filters.selectedRace|| '',
           dataset: filters.selectedDataset|| ''
-        });        
-        const response = await fetch(`/api/visualizations/keyworddistribution?${queryParams}`);
+        });
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/visualizations/keyworddistribution?${queryParams}`);
         const data = await response.json();
         if (data.success) {
           const formatted = data.data.map(item => ({
@@ -41,26 +43,32 @@ function KeywordBarChart({ filters }: { filters: Record<string, any> }) {
     fetchKeywordData();
   }, [filters]);
 
+  const gridColor = theme === 'dark' ? '#4B5563' : '#D1D5DB';
+  const axisColor = theme === 'dark' ? '#9CA3AF' : '#6B7280';
+  const tooltipBg = theme === 'dark' ? '#1a202c' : '#ffffff';
+  const tooltipBorder = theme === 'dark' ? '#4B5563' : '#D1D5DB';
+  const tooltipText = theme === 'dark' ? '#E5E7EB' : '#1F2937';
+
   return (
-        <div className="bg-gray-750 p-4 m-2 rounded-lg shadow-md border border-gray-600">
-          <h2 className="text-lg font-semibold mb-4 text-center text-gray-100">Top Keywords</h2>
+        <div style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-color)' }} className="p-4 m-2 rounded-lg shadow-md border">
+          <h2 style={{ color: 'var(--text-primary)' }} className="text-lg font-semibold mb-4 text-center">Top Keywords</h2>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart
               data={keywordData}
               layout="vertical"
               margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#4B5563" />
-              <XAxis type="number" dataKey="count" stroke="#9CA3AF" />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis type="number" dataKey="count" stroke={axisColor} />
               <YAxis
                 type="category"
                 dataKey="name"
-                stroke="#9CA3AF"
+                stroke={axisColor}
                 width={120}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: '#4B5563', border: '1px solid #4B5563', borderRadius: '8px' }}
-                labelStyle={{ color: '#E5E7EB' }}
+                contentStyle={{ backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: '8px' }}
+                labelStyle={{ color: tooltipText }}
                 itemStyle={{ color: '#6EE7B7' }}
               />
               <Bar dataKey="count" fill="#93C5FD" />
