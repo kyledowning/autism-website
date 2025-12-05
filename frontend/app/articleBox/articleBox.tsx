@@ -21,7 +21,8 @@ function highlightKeyword(title: string, searchKey: string): React.ReactNode {
         regex.test(part) ? (
           <b
             key={i}
-            className="bg-yellow-600 dark:bg-yellow-600 px-1 rounded"
+            style={{ backgroundColor: 'var(--highlight-color)' }}
+            className="px-1 rounded"
           >
             {part}
           </b>

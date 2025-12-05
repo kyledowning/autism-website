@@ -117,13 +117,14 @@ def build_where_clause(search_params, filter_list, placeholders, text_search=Fal
         conditions.append(filter_subquery)
         params.extend(filter_list + [len(filter_list)])
     
-    # Add search conditions
-    if search_type == "t1":
-        conditions.append(f"({table_alias}.abstract LIKE ? OR {table_alias}.title LIKE ?)")
-        params.extend([f'%{search_term}%', f'%{search_term}%'])
-    else:  # t2: full text
-        conditions.append("(t.text LIKE ?)")
-        params.append(f'%{search_term}%')
+    # Add search conditions (only if search term is provided)
+    if search_term:
+        if search_type == "t2":  # full text search
+            conditions.append("(t.text LIKE ?)")
+            params.append(f'%{search_term}%')
+        else:  # t1 or default: title and abstract search
+            conditions.append(f"({table_alias}.abstract LIKE ? OR {table_alias}.title LIKE ?)")
+            params.extend([f'%{search_term}%', f'%{search_term}%'])
     
     # Add dataset condition
     if dataset:
@@ -144,12 +145,12 @@ def search_data():
         filter_list, placeholders = get_filter_params()
         
         # Build query based on search type
-        if search_params['type'] == "t1":
-            base_query = "SELECT DISTINCT urls, doi, title, dataset, abstract, keywords FROM paper p"
-            join_clause = ""
-        else:
-            base_query = "SELECT DISTINCT urls, doi, title, dataset, abstract, keywords FROM paper p"
+        # Only join with PaperText for t2 (full text) searches
+        base_query = "SELECT DISTINCT urls, doi, title, dataset, abstract, keywords FROM paper p"
+        if search_params['type'] == "t2":
             join_clause = "LEFT JOIN PaperText t ON p.id = t.id"
+        else:
+            join_clause = ""
         
         where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
                                                    search_params['type'] == "t2", 'p')
@@ -181,7 +182,7 @@ def get_year_distribution():
             SUM(CASE WHEN p.dataset = 'ACM Digital Library' THEN 1 ELSE 0 END) AS acm_count
             FROM paper p
         """
-        join_clause = "" if search_params['type'] == "t1" else "LEFT JOIN PaperText t ON p.id = t.id"
+        join_clause = "LEFT JOIN PaperText t ON p.id = t.id" if search_params['type'] == "t2" else ""
         where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
                                                    search_params['type'] == "t2", 'p')
         
@@ -200,12 +201,10 @@ def get_technology_distribution():
         filter_list, placeholders = get_filter_params()
         
         # Build subquery for papers
-        if search_params['type'] == "t1":
-            paper_subquery = "SELECT id FROM Paper p"
-            join_clause = ""
-        else:
+        if search_params['type'] == "t2":
             paper_subquery = "SELECT p.id FROM Paper p LEFT JOIN PaperText t ON p.id = t.id"
-            join_clause = ""
+        else:
+            paper_subquery = "SELECT id FROM Paper p"
         
         where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
                                                    search_params['type'] == "t2", 'p')
@@ -233,7 +232,7 @@ def get_journal_distribution():
         filter_list, placeholders = get_filter_params()
         
         select_clause = "SELECT dataset, COUNT(*) as count FROM paper p"
-        join_clause = "" if search_params['type'] == "t1" else "LEFT JOIN PaperText t ON p.id = t.id"
+        join_clause = "LEFT JOIN PaperText t ON p.id = t.id" if search_params['type'] == "t2" else ""
         where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
                                                    search_params['type'] == "t2", 'p')
         
@@ -250,7 +249,7 @@ def get_keyword_distribution():
         filter_list, placeholders = get_filter_params()
         
         select_clause = "SELECT keywords FROM paper p"
-        join_clause = "" if search_params['type'] == "t1" else "LEFT JOIN PaperText t ON p.id = t.id"
+        join_clause = "LEFT JOIN PaperText t ON p.id = t.id" if search_params['type'] == "t2" else ""
         where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
                                                    search_params['type'] == "t2", 'p')
         
@@ -285,7 +284,7 @@ def get_geodata():
         filter_list, placeholders = get_filter_params()
         
         select_clause = "SELECT p.locations FROM paper p"
-        join_clause = "" if search_params['type'] == "t1" else "LEFT JOIN PaperText t ON p.id = t.id"
+        join_clause = "LEFT JOIN PaperText t ON p.id = t.id" if search_params['type'] == "t2" else ""
         where_clause, params = build_where_clause(search_params, filter_list, placeholders, 
                                                    search_params['type'] == "t2", 'p')
         
