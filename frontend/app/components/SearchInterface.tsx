@@ -182,7 +182,7 @@ export default function SearchInterface() {
         {/* Results Info */}
         <div className="mb-4">
           <h1 style={{ color: 'var(--text-secondary)' }} className="text-sm sm:text-base">
-            {count} Responses - <b className="text-blue-400"> {((count / 2709) * 100).toFixed(2)}% </b> of
+            {count} Responses - <b className="text-blue-400"> {((count / 2741) * 100).toFixed(2)}% </b> of
             total dataset
           </h1>
 
