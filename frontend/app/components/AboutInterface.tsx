@@ -2,8 +2,8 @@ export default function AboutInterface() {
   const teamMembers = [
     {
       name: "Dr. Shameed Ahmed",
-      picture: "shameem.jpg",
-      link: "https://facultyweb.cs.wwu.edu/~ahmeds/",
+      picture: "https://cs.wwu.edu/sites/cs.wwu.edu/files/styles/directory_listing/public/pictures/2022-05/SHameem.jpg?h=a9ab73db&itok=BLJLDobV",
+      link: "https://cs.wwu.edu/ahmeds",
       role: "Project Overseer",
       bio: ""
     },

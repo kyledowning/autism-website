@@ -55,7 +55,7 @@ export function LandingPage() {
               </span>
             </h1>
             <p style={{ color: 'var(--text-secondary)' }} className="text-xl sm:text-2xl md:text-3xl text-center px-4 max-w-4xl mx-auto leading-relaxed font-light">
-              A research tool for exploring autism related academic literature
+              A tool for exploring autism related academic literature
             </p>
           </div>
         </div>
