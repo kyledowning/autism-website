@@ -23,6 +23,9 @@ export function useArticleSearch(filters: FilterState) {
       filters.selectedDataset ||
       filters.selectedLevel ||
       filters.selectedRace ||
+      filters.selectedLocation ||
+      filters.selectedAffiliation ||
+      filters.selectedYear ||
       filters.selectedSearchType !== 't1'
     );
   }, [filters]);
@@ -47,6 +50,9 @@ export function useArticleSearch(filters: FilterState) {
           level: filters.selectedLevel,
           race: filters.selectedRace,
           dataset: filters.selectedDataset,
+          location: filters.selectedLocation,
+          affiliation: filters.selectedAffiliation,
+          year: filters.selectedYear,
         });
 
         const url = hasActiveFilters()
@@ -87,6 +93,9 @@ export function useArticleSearch(filters: FilterState) {
     filters.selectedLevel,
     filters.selectedRace,
     filters.selectedDataset,
+    filters.selectedLocation,
+    filters.selectedAffiliation,
+    filters.selectedYear,
     hasActiveFilters,
   ]);
 

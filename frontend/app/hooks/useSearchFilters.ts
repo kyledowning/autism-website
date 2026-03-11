@@ -75,6 +75,18 @@ export function useSearchFilters(initialState: Partial<FilterState> = {}) {
     updateFilter('selectedDataset', value);
   }, [updateFilter]);
 
+  const setLocation = useCallback((value: string) => {
+    updateFilter('selectedLocation', value);
+  }, [updateFilter]);
+
+  const setAffiliation = useCallback((value: string) => {
+    updateFilter('selectedAffiliation', value);
+  }, [updateFilter]);
+
+  const setYear = useCallback((value: string) => {
+    updateFilter('selectedYear', value);
+  }, [updateFilter]);
+
   return {
     filters,
     setSearch,
@@ -90,6 +102,9 @@ export function useSearchFilters(initialState: Partial<FilterState> = {}) {
     setLevel,
     setRace,
     setDataset,
+    setLocation,
+    setAffiliation,
+    setYear,
     resetFilters,
   };
 }

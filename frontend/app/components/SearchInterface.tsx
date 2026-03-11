@@ -49,6 +49,9 @@ export default function SearchInterface() {
     setLevel,
     setRace,
     setDataset,
+    setLocation,
+    setAffiliation,
+    setYear,
     resetFilters,
   } = useSearchFilters();
 
@@ -101,6 +104,9 @@ export default function SearchInterface() {
       selectedProblem: filters.selectedProblem,
       selectedLevel: filters.selectedLevel,
       selectedRace: filters.selectedRace,
+      selectedLocation: filters.selectedLocation,
+      selectedAffiliation: filters.selectedAffiliation,
+      selectedYear: filters.selectedYear,
       selectedDataset: filters.selectedDataset,
     }),
     [filters]
@@ -120,6 +126,9 @@ export default function SearchInterface() {
     filters.selectedDataset ||
     filters.selectedLevel ||
     filters.selectedRace ||
+    filters.selectedLocation ||
+    filters.selectedAffiliation ||
+    filters.selectedYear ||
     filters.selectedSearchType !== 't1';
 
   return (
@@ -339,6 +348,30 @@ export default function SearchInterface() {
                 <span>Dataset: {filters.selectedDataset}</span> ✕
               </button>
             )}
+            {filters.selectedLocation && (
+              <button
+                onClick={() => setLocation('')}
+                className="inline-flex items-center gap-1 px-3 py-1 bg-gray-500 text-white text-sm rounded-full hover:bg-gray-600 transition-colors cursor-pointer"
+              >
+                <span>Location: {filters.selectedLocation}</span> ✕
+              </button>
+            )}
+            {filters.selectedAffiliation && (
+              <button
+                onClick={() => setAffiliation('')}
+                className="inline-flex items-center gap-1 px-3 py-1 bg-gray-500 text-white text-sm rounded-full hover:bg-gray-600 transition-colors cursor-pointer"
+              >
+                <span>Affiliation: {filters.selectedAffiliation}</span> ✕
+              </button>
+            )}
+            {filters.selectedYear && (
+              <button
+                onClick={() => setYear('')}
+                className="inline-flex items-center gap-1 px-3 py-1 bg-gray-500 text-white text-sm rounded-full hover:bg-gray-600 transition-colors cursor-pointer"
+              >
+                <span>Year: {filters.selectedYear}</span> ✕
+              </button>
+            )}
           </div>
         </div>
 
@@ -403,6 +436,12 @@ export default function SearchInterface() {
                     setSelectedRace={setRace}
                     selectedDataset={filters.selectedDataset}
                     setSelectedDataset={setDataset}
+                    selectedLocation={filters.selectedLocation}
+                    setSelectedLocation={setLocation}
+                    selectedAffiliation={filters.selectedAffiliation}
+                    setSelectedAffiliation={setAffiliation}
+                    selectedYear={filters.selectedYear}
+                    setSelectedYear={setYear}
                     selectedSearchType={filters.selectedSearchType}
                     setSelectedSearchType={(value: string) =>
                       setSearchType(value as 't1' | 't2')
@@ -451,6 +490,12 @@ export default function SearchInterface() {
                   setSelectedRace={setRace}
                   selectedDataset={filters.selectedDataset}
                   setSelectedDataset={setDataset}
+                  selectedLocation={filters.selectedLocation}
+                  setSelectedLocation={setLocation}
+                  selectedAffiliation={filters.selectedAffiliation}
+                  setSelectedAffiliation={setAffiliation}
+                  selectedYear={filters.selectedYear}
+                  setSelectedYear={setYear}
                   selectedSearchType={filters.selectedSearchType}
                   setSelectedSearchType={(value: string) =>
                     setSearchType(value as 't1' | 't2')

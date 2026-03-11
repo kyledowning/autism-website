@@ -16,6 +16,9 @@ export interface FilterState {
   selectedLevel: string;
   selectedRace: string;
   selectedDataset: string;
+  selectedLocation: string;
+  selectedAffiliation: string;
+  selectedYear: string;
 }
 
 export interface Article {
@@ -47,4 +50,7 @@ export const INITIAL_FILTER_STATE: FilterState = {
   selectedLevel: '',
   selectedRace: '',
   selectedDataset: '',
+  selectedLocation: '',
+  selectedAffiliation: '',
+  selectedYear: '',
 };

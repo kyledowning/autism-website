@@ -24,6 +24,12 @@ interface FiltersProps {
   setSelectedRace: (value: string) => void;
   selectedDataset: string;
   setSelectedDataset: (value: string) => void;
+  selectedLocation: string;
+  setSelectedLocation: (value: string) => void;
+  selectedAffiliation: string;
+  setSelectedAffiliation: (value: string) => void;
+  selectedYear: string;
+  setSelectedYear: (value: string) => void;
   selectedSearchType: string;
   setSelectedSearchType: (value: string) => void;
 }
@@ -52,6 +58,12 @@ export default function FilterPanel({
   setSelectedRace,
   selectedDataset,
   setSelectedDataset,
+  selectedLocation,
+  setSelectedLocation,
+  selectedAffiliation,
+  setSelectedAffiliation,
+  selectedYear,
+  setSelectedYear,
   selectedSearchType,
   setSelectedSearchType
 }: FiltersProps) {
@@ -68,6 +80,9 @@ export default function FilterPanel({
     level: false,
     race: false,
     dataset: false,
+    location: false,
+    affiliation: false,
+    year: false,
     searchType: false
   });
 
@@ -351,6 +366,42 @@ export default function FilterPanel({
           { value: '', label: 'All Datasets' },
           { value: 'ACM Digital Library', label: 'ACM' },
           { value: 'IEEE Xplore', label: 'IEEE' }
+        ]}
+      />
+
+      <FilterSection
+        title="Location"
+        sectionKey="location"
+        selectedValue={selectedLocation}
+        onChange={setSelectedLocation}
+        options={[
+          { value: '', label: 'All Locations'},
+          { value: 'locationusa', label: 'United States'},
+          { value: 'locationukraine', label: 'Ukraine'},
+        ]}
+      />
+
+      <FilterSection
+        title="Author Affiliation"
+        sectionKey="authoraffiliation"
+        selectedValue={selectedAffiliation}
+        onChange={setSelectedAffiliation}
+        options={[
+          { value: '', label: 'All Author Affiliations'},
+          { value: 'authoraffiliationusa', label: 'United States'},
+          { value: 'authoraffiliationukraine', label: 'Ukraine'},
+        ]}
+      />
+
+      <FilterSection
+        title="Conference Year"
+        sectionKey="year"
+        selectedValue={selectedYear}
+        onChange={setSelectedYear}
+        options={[
+          { value: '', label: 'All Years'},
+          { value: 'year2018', label: '2018'},
+          { value: 'year2019', label: '2019'},
         ]}
       />
     </div>
