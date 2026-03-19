@@ -376,6 +376,9 @@ export default function FilterPanel({
         onChange={setSelectedLocation}
         options={[
           { value: '', label: 'All Locations'},
+          { value: 'locationaustralia', label: 'Australia'},
+          { value: 'locationbangladesh', label: 'Bangladesh'},
+          { value: 'Brazil', label: 'Brazil'},
           { value: 'locationusa', label: 'United States'},
           { value: 'locationukraine', label: 'Ukraine'},
         ]}
@@ -388,6 +391,9 @@ export default function FilterPanel({
         onChange={setSelectedAffiliation}
         options={[
           { value: '', label: 'All Author Affiliations'},
+          { value: 'authoraffiliationaustralia', label: 'Australia'},
+          { value: 'authoraffiliationbrazil', label: 'Brazil'},
+          { value: 'authoraffiliationbangladesh', label: 'Bangladesh'},
           { value: 'authoraffiliationusa', label: 'United States'},
           { value: 'authoraffiliationukraine', label: 'Ukraine'},
         ]}
