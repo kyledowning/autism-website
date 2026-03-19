@@ -84,6 +84,9 @@ def get_filter_params():
         'using': request.args.get('using', '').lower(),
         'group': request.args.get('group', '').lower(),
         'technology': request.args.get('technology', ''),
+        'location': request.args.get('location', ''),
+        'authoraffiliation': request.args.get('authoraffiliation', ''),
+        'year': request.args.get('year', ''),
     }
     filter_list = [f"{k}_{v}" for k, v in filter_mapping.items() if v and v.strip()]
     placeholders = ','.join('?' * len(filter_list))
